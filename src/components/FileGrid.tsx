@@ -61,6 +61,9 @@ export const FileGrid: React.FC<FileGridProps> = ({
           { page, limit: ITEMS_PER_PAGE }
         );
         
+        // Debug
+        console.log(`Fetched ${files.length} files. Total: ${total}`);
+        
         if (page === 1) {
           setInitialLoadComplete(true);
         }
@@ -148,6 +151,16 @@ export const FileGrid: React.FC<FileGridProps> = ({
     );
   };
   
+  // Debug
+  useEffect(() => {
+    console.log('Files state:', {
+      filesLength: files.length,
+      isLoading,
+      initialLoadComplete,
+      hasFiles: files.length > 0
+    });
+  }, [files, isLoading, initialLoadComplete]);
+  
   return (
     <div className={cn("space-y-3", className)}>
       {/* File type filters */}
@@ -169,7 +182,7 @@ export const FileGrid: React.FC<FileGridProps> = ({
               onDelete={onFileDelete}
             />
           ))
-        ) : !initialLoadComplete || isLoading ? (
+        ) : (!initialLoadComplete || isLoading) ? (
           <FileGridLoading className="col-span-full" />
         ) : (
           <FileGridEmpty searchQuery={searchQuery} />
@@ -180,7 +193,7 @@ export const FileGrid: React.FC<FileGridProps> = ({
       {hasMore && (
         <div ref={loaderRef} className="flex justify-center py-4">
           {isLoading && (
-            <FileGridLoading message="Loading more files..." />
+            <FileGridLoading message="Loading more files..." showSkeletons={false} />
           )}
         </div>
       )}

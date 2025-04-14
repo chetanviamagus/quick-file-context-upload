@@ -65,7 +65,8 @@ const generateMockFiles = (count: number): FileItem[] => {
       type: fileType,
       context: `${context} from ${date.toLocaleDateString()}`,
       lastModified: date.getTime(),
-      status: FileUploadStatus.FILE_UPLOAD_STATUS_COMPLETE
+      status: FileUploadStatus.FILE_UPLOAD_STATUS_COMPLETE,
+      progress: 100
     });
   }
   
@@ -77,9 +78,12 @@ export const getSubmittedFiles = async (): Promise<FileItem[]> => {
   // Simulate API call delay
   await new Promise(resolve => setTimeout(resolve, 300));
   
+  console.log("Getting submitted files, current count:", submittedFiles.length);
+  
   // If we don't have any files yet, create some mock files for demo purposes
   if (submittedFiles.length === 0) {
-    submittedFiles = generateMockFiles(1000);
+    submittedFiles = generateMockFiles(24); // Generate a reasonable number for initial view
+    console.log("Generated mock files:", submittedFiles.length);
   }
   
   return submittedFiles;
@@ -99,6 +103,12 @@ export const getFilteredFiles = async (
 ): Promise<{ files: FileItem[]; total: number }> => {
   // Simulate API call delay
   await new Promise(resolve => setTimeout(resolve, 200));
+  
+  // Ensure we have files to filter
+  if (submittedFiles.length === 0) {
+    submittedFiles = generateMockFiles(24);
+    console.log("Generated mock files in getFilteredFiles:", submittedFiles.length);
+  }
   
   // Filter files based on criteria
   let filtered = [...submittedFiles];
@@ -142,6 +152,8 @@ export const getFilteredFiles = async (
   const startIdx = (pagination.page - 1) * pagination.limit;
   const endIdx = startIdx + pagination.limit;
   const paginatedFiles = filtered.slice(startIdx, endIdx);
+  
+  console.log(`Filtered files: ${filtered.length}, Paginated: ${paginatedFiles.length}, Page: ${pagination.page}, Limit: ${pagination.limit}`);
   
   return { files: paginatedFiles, total };
 };
