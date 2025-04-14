@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from "react";
 import { Paperclip, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ interface ChatInputProps {
   placeholder?: string;
   disabled?: boolean;
   onFileUploadClick?: () => void;
+  isDemo?: boolean; // For presentation mode
 }
 
 const ChatInput: React.FC<ChatInputProps> = ({
@@ -23,6 +25,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
   placeholder = "How can I help you today?",
   disabled = false,
   onFileUploadClick,
+  isDemo = false,
 }) => {
   const [message, setMessage] = useState<string>("");
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
@@ -137,6 +140,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
               acceptedFileTypes={["*/*"]}
               initialSelectedFile={selectedFile}
               previouslySubmittedFiles={submittedFiles}
+              isDemo={isDemo}
             />
           </PopoverContent>
         </Popover>

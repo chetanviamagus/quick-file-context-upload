@@ -1,5 +1,5 @@
 
-import { FileItem } from "@/components/FileUploader";
+import { FileItem, FileUploadStatus } from "@/components/FileUploader";
 
 // In-memory storage for submitted files
 let submittedFiles: FileItem[] = [];
@@ -32,7 +32,7 @@ export const getSubmittedFiles = async (): Promise<FileItem[]> => {
         type: "application/gzip",
         context: "Production Kubernetes cluster that experienced 503 errors",
         lastModified: Date.now() - 3600000,
-        status: "success"
+        status: FileUploadStatus.FILE_UPLOAD_STATUS_COMPLETE
       },
       {
         id: crypto.randomUUID(),
@@ -41,7 +41,7 @@ export const getSubmittedFiles = async (): Promise<FileItem[]> => {
         type: "application/json",
         context: "API Gateway performance metrics from last 24 hours",
         lastModified: Date.now() - 7200000,
-        status: "success"
+        status: FileUploadStatus.FILE_UPLOAD_STATUS_COMPLETE
       },
       {
         id: crypto.randomUUID(),
@@ -50,7 +50,7 @@ export const getSubmittedFiles = async (): Promise<FileItem[]> => {
         type: "application/gzip",
         context: "Application's diagnostics bundle from production Kubernetes cluster",
         lastModified: Date.now() - 86400000,
-        status: "success"
+        status: FileUploadStatus.FILE_UPLOAD_STATUS_COMPLETE
       }
     ];
   }
