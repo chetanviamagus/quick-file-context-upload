@@ -37,6 +37,7 @@ const Index = () => {
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [diagnosticResults, setDiagnosticResults] = useState<DiagnosticResult | null>(null);
   const [isFileInfoExpanded, setIsFileInfoExpanded] = useState<boolean>(false);
+  const [isFileListExpanded, setIsFileListExpanded] = useState<boolean>(true);
 
   useEffect(() => {
     // Fetch previously submitted files when component mounts
@@ -158,9 +159,9 @@ const Index = () => {
       </header>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
-        {/* Left Panel - Chat History */}
-        <div className="w-full md:w-2/3 flex flex-col h-full">
+      <div className="flex-1 overflow-hidden flex flex-col">
+        {/* Chat History */}
+        <div className="w-full flex-1 flex flex-col h-full">
           <div className="flex-1 overflow-y-auto p-4">
             {chatMessages.length > 0 ? (
               <div className="space-y-6">
@@ -293,8 +294,73 @@ const Index = () => {
             )}
           </div>
 
-          {/* File Info and Chat Input */}
-          <div className="border-t border-zinc-800 p-4 bg-zinc-900/80">
+          {/* Diagnostic Files List - Now above the chat input */}
+          <div className="border-t border-zinc-800 bg-zinc-900/50 px-4 pt-3">
+            <Collapsible 
+              open={isFileListExpanded}
+              onOpenChange={setIsFileListExpanded}
+              className="mb-3"
+            >
+              <CollapsibleTrigger asChild>
+                <div className="flex items-center justify-between mb-2 cursor-pointer">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-bold">Diagnostic Files</h3>
+                    {submittedFiles.length > 0 && (
+                      <span className="text-xs bg-blue-500/20 text-blue-400 px-1.5 py-0.5 rounded-full">
+                        {submittedFiles.length}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs">
+                      <RefreshCw className="h-3.5 w-3.5" />
+                      <span className="hidden sm:inline">Refresh</span>
+                    </Button>
+                    <ChevronDown className={`h-4 w-4 transition-transform ${isFileListExpanded ? 'transform rotate-180' : ''}`} />
+                  </div>
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
+                  {submittedFiles.map((file) => (
+                    <div 
+                      key={file.id}
+                      className={`flex items-center justify-between p-2 rounded-md cursor-pointer ${activeFile?.id === file.id ? 'bg-zinc-800 border border-blue-500/50' : 'bg-zinc-800/50 hover:bg-zinc-800'}`}
+                      onClick={() => setActiveFile(file)}
+                    >
+                      <div className="flex items-center gap-2 overflow-hidden">
+                        <File className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                        <div className="overflow-hidden">
+                          <p className="text-sm font-medium truncate">{file.name}</p>
+                          <p className="text-xs text-zinc-400">
+                            {file.size > 1024 * 1024 
+                              ? `${(file.size / (1024 * 1024)).toFixed(2)} MB` 
+                              : `${(file.size / 1024).toFixed(2)} KB`}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="icon" className="h-7 w-7">
+                          <Eye className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7">
+                          <Copy className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {submittedFiles.length === 0 && (
+                    <div className="col-span-full text-center py-4">
+                      <p className="text-sm text-zinc-500">No diagnostic files uploaded yet</p>
+                      <p className="text-xs text-zinc-600 mt-1">Upload a file using the paperclip icon below</p>
+                    </div>
+                  )}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+            
+            {/* File Info and Chat Input */}
             {activeFile && (
               <Collapsible 
                 open={isFileInfoExpanded}
@@ -335,56 +401,6 @@ const Index = () => {
               placeholder={activeFile ? "Ask about the diagnostic file..." : "Upload a diagnostic file or type a message..."}
               disabled={isAnalyzing}
             />
-          </div>
-        </div>
-
-        {/* Right Panel - Placeholder for expanded view */}
-        <div className="hidden md:block w-1/3 h-full border-l border-zinc-800 bg-zinc-900/30">
-          <div className="p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-bold">Diagnostic Files</h3>
-              <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs">
-                <RefreshCw className="h-3.5 w-3.5" />
-                <span>Refresh</span>
-              </Button>
-            </div>
-            
-            <div className="space-y-2">
-              {submittedFiles.map((file) => (
-                <div 
-                  key={file.id}
-                  className={`flex items-center justify-between p-2 rounded-md cursor-pointer ${activeFile?.id === file.id ? 'bg-zinc-800' : 'hover:bg-zinc-800/50'}`}
-                  onClick={() => setActiveFile(file)}
-                >
-                  <div className="flex items-center gap-2">
-                    <File className="h-4 w-4 text-blue-400" />
-                    <div>
-                      <p className="text-sm">{file.name}</p>
-                      <p className="text-xs text-zinc-400">
-                        {file.size > 1024 * 1024 
-                          ? `${(file.size / (1024 * 1024)).toFixed(2)} MB` 
-                          : `${(file.size / 1024).toFixed(2)} KB`}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" className="h-7 w-7">
-                      <Eye className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7">
-                      <Copy className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
-              
-              {submittedFiles.length === 0 && (
-                <div className="text-center py-6">
-                  <p className="text-sm text-zinc-500">No diagnostic files uploaded yet</p>
-                  <p className="text-xs text-zinc-600 mt-1">Upload a file using the paperclip icon</p>
-                </div>
-              )}
-            </div>
           </div>
         </div>
       </div>
