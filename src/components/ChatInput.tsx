@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Paperclip, Send, X, File as FileIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,7 @@ interface ChatInputProps {
   disabled?: boolean;
   onFileUploadClick?: () => void;
   isDemo?: boolean; // For presentation mode
+  activeFile?: FileItem | null; // Add activeFile prop
 }
 
 const ChatInput: React.FC<ChatInputProps> = ({
@@ -26,12 +27,20 @@ const ChatInput: React.FC<ChatInputProps> = ({
   disabled = false,
   onFileUploadClick,
   isDemo = false,
+  activeFile = null, // Default to null
 }) => {
   const [message, setMessage] = useState<string>("");
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
   const [isUploaderOpen, setIsUploaderOpen] = useState<boolean>(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  // Update selectedFile when activeFile changes
+  useEffect(() => {
+    if (activeFile) {
+      setSelectedFile(activeFile);
+    }
+  }, [activeFile]);
 
   const handleSend = (e?: React.MouseEvent) => {
     if (e) {
@@ -95,13 +104,16 @@ const ChatInput: React.FC<ChatInputProps> = ({
     setSelectedFile(null);
   };
 
+  // Use the active file or selected file for display
+  const displayFile = selectedFile;
+
   return (
     <div 
       className="relative w-full" 
       onClick={(e) => e.stopPropagation()}
       onMouseDown={(e) => e.stopPropagation()}
     >
-      {selectedFile && (
+      {displayFile && (
         <div className={cn(
           "flex items-center gap-2 w-full border bg-zinc-900/90 rounded-t-md px-3 py-2",
           "border-zinc-800 border-b-0"
@@ -109,8 +121,8 @@ const ChatInput: React.FC<ChatInputProps> = ({
           <div className="flex items-center gap-2 flex-1 overflow-hidden">
             <FileIcon className="h-4 w-4 text-primary flex-shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{selectedFile.name}</p>
-              <p className="text-xs text-zinc-400">{formatFileSize(selectedFile.size)}</p>
+              <p className="text-sm font-medium truncate">{displayFile.name}</p>
+              <p className="text-xs text-zinc-400">{formatFileSize(displayFile.size)}</p>
             </div>
           </div>
           <Button
@@ -127,7 +139,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
 
       <div className={cn(
         "flex items-center gap-1.5 w-full border bg-zinc-900/80 px-2 py-1.5",
-        selectedFile ? "rounded-b-md border-t-0" : "rounded-md",
+        displayFile ? "rounded-b-md border-t-0" : "rounded-md",
         "border-zinc-800",
         disabled ? "opacity-60" : ""
       )}>
@@ -182,8 +194,8 @@ const ChatInput: React.FC<ChatInputProps> = ({
           onKeyDown={handleKeyDown}
           onClick={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
-          placeholder={selectedFile 
-            ? `Ask about ${selectedFile.name}...` 
+          placeholder={displayFile 
+            ? `Ask about ${displayFile.name}...` 
             : placeholder}
           className="flex-1 border-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-0 py-0.5 bg-transparent"
           disabled={disabled}
@@ -195,7 +207,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
           className="h-8 w-8 rounded-full shrink-0 text-primary hover:text-primary/80"
           onClick={handleSend}
           onMouseDown={(e) => e.stopPropagation()}
-          disabled={disabled || (!message.trim() && !selectedFile)}
+          disabled={disabled || (!message.trim() && !displayFile)}
         >
           <Send className="h-5 w-5" />
         </Button>

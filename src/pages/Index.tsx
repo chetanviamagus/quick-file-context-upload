@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import ChatInput from "@/components/ChatInput";
@@ -488,6 +489,7 @@ const Index = () => {
               placeholder={activeFile ? "Ask about the diagnostic file..." : "Upload a diagnostic file or type a message..."}
               disabled={isAnalyzing}
               onFileUploadClick={handleFileUploadClick}
+              activeFile={activeFile} // Pass the activeFile to ChatInput
             />
           </div>
         </div>
