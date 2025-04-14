@@ -1,6 +1,6 @@
 
 import React, { useState, useRef } from "react";
-import { Paperclip, Send, X } from "lucide-react";
+import { Paperclip, Send, X, File as FileIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -89,15 +89,45 @@ const ChatInput: React.FC<ChatInputProps> = ({
     }
   };
 
+  const handleRemoveSelectedFile = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setSelectedFile(null);
+  };
+
   return (
     <div 
       className="relative w-full" 
       onClick={(e) => e.stopPropagation()}
       onMouseDown={(e) => e.stopPropagation()}
     >
+      {selectedFile && (
+        <div className={cn(
+          "flex items-center gap-2 w-full border bg-zinc-900/90 rounded-t-md px-3 py-2",
+          "border-zinc-800 border-b-0"
+        )}>
+          <div className="flex items-center gap-2 flex-1 overflow-hidden">
+            <FileIcon className="h-4 w-4 text-primary flex-shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate">{selectedFile.name}</p>
+              <p className="text-xs text-zinc-400">{formatFileSize(selectedFile.size)}</p>
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 rounded-full shrink-0"
+            onClick={handleRemoveSelectedFile}
+            disabled={disabled}
+          >
+            <X className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      )}
+
       <div className={cn(
-        "flex items-center gap-1.5 w-full border bg-zinc-900/80 rounded-md px-2 py-1.5",
-        selectedFile ? "rounded-t-none border-t-0" : "",
+        "flex items-center gap-1.5 w-full border bg-zinc-900/80 px-2 py-1.5",
+        selectedFile ? "rounded-b-md border-t-0" : "rounded-md",
         "border-zinc-800",
         disabled ? "opacity-60" : ""
       )}>
@@ -152,7 +182,9 @@ const ChatInput: React.FC<ChatInputProps> = ({
           onKeyDown={handleKeyDown}
           onClick={(e) => e.stopPropagation()}
           onMouseDown={(e) => e.stopPropagation()}
-          placeholder={placeholder}
+          placeholder={selectedFile 
+            ? `Ask about ${selectedFile.name}...` 
+            : placeholder}
           className="flex-1 border-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-0 py-0.5 bg-transparent"
           disabled={disabled}
         />
