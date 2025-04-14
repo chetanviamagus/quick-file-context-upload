@@ -141,6 +141,12 @@ const FileUploader: React.FC<FileUploaderProps> = ({
     }
   };
 
+  const handleSubmitFile = () => {
+    if (selectedFile) {
+      onSubmit?.(selectedFile);
+    }
+  };
+
   return (
     <div 
       className="w-full space-y-3" 
@@ -232,6 +238,17 @@ const FileUploader: React.FC<FileUploaderProps> = ({
           </p>
         </div>
       </div>
+
+      {selectedFile && (
+        <Button 
+          className="w-full"
+          onClick={handleSubmitFile}
+          disabled={!selectedFile}
+        >
+          <Send className="mr-2 h-4 w-4" />
+          Submit Diagnostics File
+        </Button>
+      )}
     </div>
   );
 };
