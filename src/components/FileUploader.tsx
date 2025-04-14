@@ -75,12 +75,11 @@ const FileUploader: React.FC<FileUploaderProps> = ({
 
       setFiles(prev => [...prev, newFile]);
       setSelectedFile(newFile);
-      onFileSelect?.(newFile);
       setContext("");
       
       toast({
         title: "File uploaded",
-        description: `${file.name} has been uploaded successfully`,
+        description: `${file.name} has been added`,
       });
     }
     // Reset the file input
@@ -97,7 +96,6 @@ const FileUploader: React.FC<FileUploaderProps> = ({
       const updatedFile = { ...selectedFile, context: e.target.value };
       setSelectedFile(updatedFile);
       setFiles(prev => prev.map(f => f.id === selectedFile.id ? updatedFile : f));
-      onFileSelect?.(updatedFile);
     }
   };
 
@@ -156,12 +154,18 @@ const FileUploader: React.FC<FileUploaderProps> = ({
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
+  const handleSelect = () => {
+    if (selectedFile) {
+      onFileSelect?.(selectedFile);
+    }
+  };
+
   return (
-    <div className="w-full space-y-4">
-      {/* File uploader area */}
+    <div className="w-full space-y-3">
+      {/* File uploader area - more compact for the popover */}
       <div
         className={cn(
-          "border-2 border-dashed rounded-lg p-6 transition-colors cursor-pointer",
+          "border-2 border-dashed rounded-lg p-4 transition-colors cursor-pointer",
           isDragging 
             ? "border-primary bg-primary/5" 
             : "border-muted-foreground/20 hover:border-primary/50",
@@ -180,54 +184,54 @@ const FileUploader: React.FC<FileUploaderProps> = ({
           accept={acceptedFileTypes.join(",")}
         />
         
-        <div className="flex flex-col items-center gap-2 text-center">
-          <Upload className="h-10 w-10 text-muted-foreground mb-2" />
-          <h3 className="text-lg font-medium">Upload a file</h3>
-          <p className="text-sm text-muted-foreground">
-            Drag and drop or click to browse
-          </p>
+        <div className="flex flex-col items-center gap-1 text-center">
+          <Upload className="h-8 w-8 text-muted-foreground mb-1" />
+          <h3 className="text-sm font-medium">Upload a file</h3>
           <p className="text-xs text-muted-foreground">
-            Max size: {maxSizeMB}MB
+            Drag and drop or click to browse
           </p>
         </div>
       </div>
 
       {/* Context textarea */}
-      <div className="space-y-2">
-        <Textarea
-          placeholder="Add context about this file (optional)"
-          className="min-h-[80px] resize-none"
-          value={context}
-          onChange={handleContextChange}
-        />
-      </div>
+      {selectedFile && (
+        <div className="space-y-1">
+          <p className="text-xs font-medium">Add context about this file (optional)</p>
+          <Textarea
+            placeholder="What's this file about?"
+            className="min-h-[60px] resize-none text-sm"
+            value={context}
+            onChange={handleContextChange}
+          />
+        </div>
+      )}
 
       {/* Selected file info */}
       {selectedFile && (
-        <div className="border rounded-lg p-4 bg-accent/50">
+        <div className="border rounded-lg p-3 bg-accent/50">
           <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <File className="h-8 w-8 text-primary" />
+            <div className="flex items-center gap-2">
+              <File className="h-7 w-7 text-primary" />
               <div>
-                <p className="font-medium truncate max-w-[200px]">{selectedFile.name}</p>
+                <p className="font-medium text-sm truncate max-w-[200px]">{selectedFile.name}</p>
                 <p className="text-xs text-muted-foreground">{formatFileSize(selectedFile.size)}</p>
               </div>
             </div>
             <Button 
               variant="ghost" 
               size="icon" 
-              className="h-8 w-8 rounded-full"
+              className="h-7 w-7 rounded-full"
               onClick={() => {
                 setSelectedFile(null);
                 setContext("");
                 onFileSelect?.(null);
               }}
             >
-              <X className="h-4 w-4" />
+              <X className="h-3.5 w-3.5" />
             </Button>
           </div>
           {selectedFile.context && (
-            <div className="mt-2 text-sm text-muted-foreground">
+            <div className="mt-2 text-xs text-muted-foreground">
               <p className="line-clamp-2">{selectedFile.context}</p>
             </div>
           )}
@@ -236,37 +240,48 @@ const FileUploader: React.FC<FileUploaderProps> = ({
 
       {/* Previously uploaded files */}
       {files.length > 0 && (
-        <div className="space-y-2">
-          <h4 className="text-sm font-medium">Files ({files.length})</h4>
-          <ul className="space-y-2 max-h-[200px] overflow-y-auto">
+        <div className="space-y-1">
+          <p className="text-xs font-medium">Recent files</p>
+          <ul className="space-y-1.5 max-h-[120px] overflow-y-auto pr-1">
             {files.map((file) => (
               <li 
                 key={file.id}
                 className={cn(
-                  "flex items-center justify-between p-3 rounded-md cursor-pointer hover:bg-accent/50",
+                  "flex items-center justify-between p-2 rounded-md cursor-pointer hover:bg-accent/50 text-sm",
                   selectedFile?.id === file.id ? "bg-accent" : "bg-background"
                 )}
                 onClick={() => selectExistingFile(file)}
               >
-                <div className="flex items-center gap-3">
-                  <PaperclipIcon className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="text-sm font-medium truncate max-w-[200px]">{file.name}</p>
+                <div className="flex items-center gap-2 overflow-hidden">
+                  <PaperclipIcon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <div className="overflow-hidden">
+                    <p className="text-xs font-medium truncate max-w-[180px]">{file.name}</p>
                     <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
                   </div>
                 </div>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 opacity-50 hover:opacity-100 rounded-full"
+                  className="h-6 w-6 opacity-70 hover:opacity-100 rounded-full"
                   onClick={(e) => removeFile(file.id, e)}
                 >
-                  <Trash2 className="h-4 w-4 text-destructive" />
+                  <Trash2 className="h-3 w-3 text-destructive" />
                 </Button>
               </li>
             ))}
           </ul>
         </div>
+      )}
+
+      {/* Confirm selection button */}
+      {selectedFile && (
+        <Button 
+          className="w-full text-sm py-1.5 h-8" 
+          size="sm"
+          onClick={handleSelect}
+        >
+          Use this file
+        </Button>
       )}
     </div>
   );
