@@ -198,14 +198,7 @@ export const FileGrid: React.FC<FileGridProps> = ({
         )}
       </div>
       
-      {/* Loader reference element for infinite scrolling */}
-      {hasMore && isLoading &&(
-        
-          
-      <div ref={loaderRef} className="flex justify-center py-4">
-            <FileGridLoading message="Loading more files..." showSkeletons={false} />
-        </div>  )}
-        
+      
       
       
       {/* End of list message */}
