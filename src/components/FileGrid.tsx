@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { getFilteredFiles } from '@/services/fileService';
 import { FileItem } from '@/components/FileUploader';
@@ -8,6 +8,7 @@ import { FileCard } from '@/components/file/FileItem';
 import { FileTypeFilters } from '@/components/file/FileTypeFilters';
 import { FileGridLoading } from '@/components/file/FileGridLoading';
 import { FileGridEmpty } from '@/components/file/FileGridEmpty';
+import { Loader } from 'lucide-react';
 
 interface FileGridProps {
   searchQuery: string;
@@ -29,6 +30,8 @@ export const FileGrid: React.FC<FileGridProps> = ({
   const [fileTypes, setFileTypes] = useState<string[]>([]);
   const [selectedFileTypes, setSelectedFileTypes] = useState<string[]>([]);
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
+  const [allFiles, setAllFiles] = useState<FileItem[]>([]);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   
   const {
     items: files,
@@ -40,7 +43,7 @@ export const FileGrid: React.FC<FileGridProps> = ({
   } = useInfiniteScroll<FileItem>({
     threshold: 200,
     initialPage: 1,
-    loadMoreDelay: 500 // Increased delay to avoid too many requests
+    loadMoreDelay: 500
   });
   
   // Reset when search query or file types changes
@@ -90,67 +93,27 @@ export const FileGrid: React.FC<FileGridProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery, selectedFileTypes]);
   
-  // Listen for loadmore events for infinite scrolling
+  // Get all files for counting purposes
   useEffect(() => {
-    if (!loaderRef.current || !hasMore) return;
-    
-    const loaderElement = loaderRef.current;
-    
-    const handleLoadMore = async () => {
-      if (isLoading) return; // Prevent multiple simultaneous requests
-      
-      const fetchFiles = async (page: number) => {
-        try {
-          console.log(`Loading more: page ${page}`);
-          
-          const { files, total } = await getFilteredFiles(
-            {
-              query: searchQuery,
-              fileTypes: selectedFileTypes.length > 0 ? selectedFileTypes : undefined
-            },
-            { page, limit: ITEMS_PER_PAGE }
-          );
-          
-          return {
-            data: files,
-            totalCount: total,
-            pageSize: ITEMS_PER_PAGE
-          };
-        } catch (error) {
-          console.error('Error fetching more files:', error);
-          return {
-            data: [],
-            totalCount: 0,
-            pageSize: ITEMS_PER_PAGE
-          };
-        }
-      };
-      
-      loadMore(fetchFiles);
-    };
-    
-    loaderElement.addEventListener('loadmore', handleLoadMore);
-    
-    return () => {
-      loaderElement.removeEventListener('loadmore', handleLoadMore);
-    };
-  }, [loadMore, loaderRef, searchQuery, selectedFileTypes, isLoading, hasMore]);
-  
-  // Extract unique file types for filtering
-  useEffect(() => {
-    const fetchFileTypes = async () => {
+    const fetchAllFiles = async () => {
       try {
         const allFiles = await getFilteredFiles({}, { page: 1, limit: 1000 });
-        const types = new Set(allFiles.files.map(file => file.type));
-        setFileTypes(Array.from(types));
+        setAllFiles(allFiles.files);
       } catch (error) {
-        console.error('Error fetching file types:', error);
-        setFileTypes([]);
+        console.error('Error fetching all files:', error);
       }
     };
     
-    fetchFileTypes();
+    fetchAllFiles();
   }, []);
+  
+  // Extract unique file types for filtering
+  useEffect(() => {
+    if (allFiles.length > 0) {
+      const types = new Set(allFiles.map(file => file.type));
+      setFileTypes(Array.from(types));
+    }
+  }, [allFiles]);
   
   const toggleFileType = (type: string) => {
     setSelectedFileTypes(prev => 
@@ -160,15 +123,57 @@ export const FileGrid: React.FC<FileGridProps> = ({
     );
   };
   
-  // Debug
+  // Setup intersection observer for infinite scrolling
   useEffect(() => {
-    console.log('Files state:', {
-      filesLength: files.length,
-      isLoading,
-      initialLoadComplete,
-      hasFiles: files.length > 0
+    if (!scrollContainerRef.current || !hasMore || isLoading) return;
+    
+    const container = scrollContainerRef.current;
+    const observer = new IntersectionObserver((entries) => {
+      const [entry] = entries;
+      if (entry.isIntersecting && hasMore && !isLoading) {
+        const fetchMoreFiles = async (page: number) => {
+          try {
+            const { files, total } = await getFilteredFiles(
+              {
+                query: searchQuery,
+                fileTypes: selectedFileTypes.length > 0 ? selectedFileTypes : undefined
+              },
+              { page, limit: ITEMS_PER_PAGE }
+            );
+            
+            return {
+              data: files,
+              totalCount: total,
+              pageSize: ITEMS_PER_PAGE
+            };
+          } catch (error) {
+            console.error('Error fetching more files:', error);
+            return {
+              data: [],
+              totalCount: 0,
+              pageSize: ITEMS_PER_PAGE
+            };
+          }
+        };
+        
+        loadMore(fetchMoreFiles);
+      }
+    }, {
+      root: null,
+      rootMargin: '100px',
+      threshold: 0.1
     });
-  }, [files, isLoading, initialLoadComplete]);
+    
+    if (loaderRef.current) {
+      observer.observe(loaderRef.current);
+    }
+    
+    return () => {
+      if (loaderRef.current) {
+        observer.unobserve(loaderRef.current);
+      }
+    };
+  }, [hasMore, isLoading, loadMore, loaderRef, searchQuery, selectedFileTypes]);
   
   return (
     <div className={cn("space-y-3", className)}>
@@ -176,30 +181,46 @@ export const FileGrid: React.FC<FileGridProps> = ({
       <FileTypeFilters 
         fileTypes={fileTypes} 
         selectedFileTypes={selectedFileTypes} 
-        onToggleFileType={toggleFileType} 
+        onToggleFileType={toggleFileType}
+        allFiles={allFiles}
       />
       
       {/* Grid of files */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 min-h-[300px] max-h-[300px] overflow-auto">
+      <div 
+        ref={scrollContainerRef}
+        className="grid grid-cols-1 md:grid-cols-3 gap-3 min-h-[300px] max-h-[300px] overflow-auto"
+      >
         {files.length > 0 ? (
-          files.map((file) => (
-            <FileCard
-              key={file.id}
-              file={file}
-              isActive={activeFile?.id === file.id}
-              onSelect={onFileSelect}
-              onDelete={onFileDelete}
-            />
-          ))
+          <>
+            {files.map((file) => (
+              <FileCard
+                key={file.id}
+                file={file}
+                isActive={activeFile?.id === file.id}
+                onSelect={onFileSelect}
+                onDelete={onFileDelete}
+              />
+            ))}
+            
+            {/* Loading indicator at the bottom for infinite scroll */}
+            {hasMore && (
+              <div 
+                ref={loaderRef}
+                className={cn(
+                  "col-span-full flex justify-center py-2",
+                  isLoading ? "opacity-100" : "opacity-0"
+                )}
+              >
+                <Loader className="h-4 w-4 animate-spin text-zinc-400" />
+              </div>
+            )}
+          </>
         ) : (!initialLoadComplete || isLoading) ? (
           <FileGridLoading className="col-span-full" />
         ) : (
           <FileGridEmpty searchQuery={searchQuery} />
         )}
       </div>
-      
-      
-      
       
       {/* End of list message */}
       {!hasMore && files.length > 0 && (
