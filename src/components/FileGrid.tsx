@@ -28,6 +28,7 @@ export const FileGrid: React.FC<FileGridProps> = ({
 }) => {
   const [fileTypes, setFileTypes] = useState<string[]>([]);
   const [selectedFileTypes, setSelectedFileTypes] = useState<string[]>([]);
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   
   const {
     items: files,
@@ -54,6 +55,10 @@ export const FileGrid: React.FC<FileGridProps> = ({
         },
         { page, limit: ITEMS_PER_PAGE }
       );
+      
+      if (page === 1) {
+        setInitialLoadComplete(true);
+      }
       
       return {
         data: files,
@@ -246,7 +251,7 @@ export const FileGrid: React.FC<FileGridProps> = ({
               </div>
             </div>
           ))
-        ) : isLoading && files.length === 0 ? (
+        ) : !initialLoadComplete || isLoading ? (
           <div className="col-span-full flex justify-center py-6">
             <div className="flex items-center gap-2">
               <Loader className="h-4 w-4 animate-spin text-zinc-400" />

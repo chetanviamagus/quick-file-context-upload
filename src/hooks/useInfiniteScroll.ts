@@ -21,7 +21,7 @@ export function useInfiniteScroll<T>({
   const isFetchingRef = useRef(false);
   
   const loadMore = useCallback(async (fetchFn: (page: number) => Promise<{ data: T[], totalCount: number, pageSize: number }>) => {
-    if (isFetchingRef.current || !hasMore) return;
+    if (isFetchingRef.current) return;
     
     try {
       isFetchingRef.current = true;
@@ -39,12 +39,13 @@ export function useInfiniteScroll<T>({
       // Increment page for next fetch
       setPage(prevPage => prevPage + 1);
     } catch (err) {
+      console.error("Error loading items:", err);
       setError(err instanceof Error ? err : new Error('An error occurred while loading more items'));
     } finally {
       setIsLoading(false);
       isFetchingRef.current = false;
     }
-  }, [page, hasMore]);
+  }, [page]);
   
   const reset = useCallback(() => {
     setItems([]);
@@ -55,12 +56,12 @@ export function useInfiniteScroll<T>({
   
   // Observer for intersection detection
   useEffect(() => {
-    if (!loaderRef.current) return;
+    if (!loaderRef.current || !hasMore) return;
     
     const observer = new IntersectionObserver(
       entries => {
         const [entry] = entries;
-        if (entry.isIntersecting && !isFetchingRef.current && hasMore) {
+        if (entry.isIntersecting && !isFetchingRef.current) {
           // Add a small delay to avoid rapid firing
           setTimeout(() => {
             loaderRef.current?.dispatchEvent(new CustomEvent('loadmore'));
