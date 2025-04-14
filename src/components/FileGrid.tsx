@@ -180,7 +180,7 @@ export const FileGrid: React.FC<FileGridProps> = ({
       />
       
       {/* Grid of files */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 min-h-[300px] max-h-[300px]">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 min-h-[300px] max-h-[300px] overflow-auto">
         {files.length > 0 ? (
           files.map((file) => (
             <FileCard
