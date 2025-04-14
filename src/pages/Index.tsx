@@ -15,12 +15,17 @@ const Index = () => {
     console.log("Message:", message);
     console.log("File:", file);
     
-    toast({
-      title: "Processing",
-      description: file 
-        ? `Processing file: ${file.name}${message ? ` with message: ${message}` : ''}`
-        : `Sent: ${message}`,
-    });
+    if (file) {
+      toast({
+        title: "File Submitted",
+        description: `File: ${file.name}${file.context ? ` with context: ${file.context}` : ''}${message ? ` and message: ${message}` : ''}`,
+      });
+    } else if (message) {
+      toast({
+        title: "Message Sent",
+        description: `Sent: ${message}`,
+      });
+    }
   };
 
   return (

@@ -52,6 +52,16 @@ const ChatInput: React.FC<ChatInputProps> = ({
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
+  const handleFileSubmit = (file: FileItem) => {
+    onSend?.("", file);
+    setSelectedFile(null);
+    setIsUploaderOpen(false);
+    toast({
+      title: "File submitted",
+      description: `${file.name} has been submitted with context: ${file.context}`,
+    });
+  };
+
   return (
     <div className="relative w-full">
       {selectedFile && (
@@ -114,6 +124,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                   setIsUploaderOpen(false);
                 }
               }}
+              onSubmit={handleFileSubmit}
               maxSizeMB={20}
               acceptedFileTypes={["*/*"]}
               initialSelectedFile={selectedFile}

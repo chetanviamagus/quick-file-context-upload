@@ -1,6 +1,5 @@
-
 import React, { useState, useRef, useEffect } from "react";
-import { Upload, X, File, PaperclipIcon, Trash2, CheckCircle } from "lucide-react";
+import { Upload, X, File, PaperclipIcon, Trash2, CheckCircle, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -20,6 +19,7 @@ export interface FileItem {
 
 interface FileUploaderProps {
   onFileSelect?: (file: FileItem | null) => void;
+  onSubmit?: (file: FileItem) => void;
   maxSizeMB?: number;
   acceptedFileTypes?: string[];
   initialSelectedFile?: FileItem | null;
@@ -27,11 +27,11 @@ interface FileUploaderProps {
 
 const FileUploader: React.FC<FileUploaderProps> = ({
   onFileSelect,
+  onSubmit,
   maxSizeMB = 10,
   acceptedFileTypes = ["*/*"],
   initialSelectedFile = null,
 }) => {
-  // Static list of files for demo purposes - in a real app, this would come from your backend
   const [files, setFiles] = useState<FileItem[]>([]);
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(initialSelectedFile);
   const [context, setContext] = useState<string>(initialSelectedFile?.context || "");
@@ -39,9 +39,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  // Initialize with some mock files for demo purposes
   useEffect(() => {
-    // Check if we already have files to avoid duplicating them on each render
     if (files.length === 0) {
       const mockFiles: FileItem[] = [
         {
@@ -50,7 +48,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
           size: 2500000,
           type: "application/pdf",
           context: "Project proposal",
-          lastModified: Date.now() - 86400000, // 1 day ago
+          lastModified: Date.now() - 86400000,
           status: "success",
           progress: 100
         },
@@ -60,7 +58,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
           size: 1200000,
           type: "image/jpeg",
           context: "Product screenshot",
-          lastModified: Date.now() - 172800000, // 2 days ago
+          lastModified: Date.now() - 172800000,
           status: "success",
           progress: 100
         }
@@ -69,7 +67,6 @@ const FileUploader: React.FC<FileUploaderProps> = ({
     }
   }, [files.length]);
 
-  // Set initial context from selected file if any
   useEffect(() => {
     if (initialSelectedFile) {
       setSelectedFile(initialSelectedFile);
@@ -82,7 +79,6 @@ const FileUploader: React.FC<FileUploaderProps> = ({
     if (fileList && fileList.length > 0) {
       const file = fileList[0];
       
-      // Check file size
       if (file.size > maxSizeMB * 1024 * 1024) {
         toast({
           title: "File too large",
@@ -92,7 +88,6 @@ const FileUploader: React.FC<FileUploaderProps> = ({
         return;
       }
       
-      // Check file type if specific types are provided
       if (acceptedFileTypes[0] !== "*/*") {
         const fileType = file.type;
         const isAccepted = acceptedFileTypes.some(type => 
@@ -108,7 +103,6 @@ const FileUploader: React.FC<FileUploaderProps> = ({
         }
       }
 
-      // Create new file with uploading status
       const newFile: FileItem = {
         id: crypto.randomUUID(),
         name: file.name,
@@ -124,10 +118,8 @@ const FileUploader: React.FC<FileUploaderProps> = ({
       setSelectedFile(newFile);
       setContext("");
       
-      // Simulate file upload progress
       simulateUpload(newFile);
     }
-    // Reset the file input
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -141,7 +133,6 @@ const FileUploader: React.FC<FileUploaderProps> = ({
         progress = 100;
         clearInterval(interval);
         
-        // Update file status to success after upload completes
         setFiles(prev => 
           prev.map(f => 
             f.id === file.id 
@@ -163,7 +154,6 @@ const FileUploader: React.FC<FileUploaderProps> = ({
           description: `${file.name} has been uploaded successfully`,
         });
       } else {
-        // Update progress
         setFiles(prev => 
           prev.map(f => 
             f.id === file.id 
@@ -188,12 +178,10 @@ const FileUploader: React.FC<FileUploaderProps> = ({
     setContext(newContext);
     
     if (selectedFile) {
-      // Update context for the selected file
       const updatedFile = { ...selectedFile, context: newContext };
       setSelectedFile(updatedFile);
       setFiles(prev => prev.map(f => f.id === selectedFile.id ? updatedFile : f));
       
-      // Notify the parent component about the context change
       onFileSelect?.(updatedFile);
     }
   };
@@ -236,7 +224,6 @@ const FileUploader: React.FC<FileUploaderProps> = ({
     
     const droppedFiles = e.dataTransfer.files;
     if (droppedFiles && droppedFiles.length > 0) {
-      // Create a new event to reuse handleFileChange
       const event = {
         target: {
           files: droppedFiles
@@ -253,10 +240,18 @@ const FileUploader: React.FC<FileUploaderProps> = ({
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  // Show available files first for better UX
+  const handleSubmit = () => {
+    if (selectedFile && selectedFile.status === "success") {
+      onSubmit?.(selectedFile);
+      toast({
+        title: "File submitted",
+        description: `${selectedFile.name} has been submitted with context`,
+      });
+    }
+  };
+
   return (
     <div className="w-full space-y-3">
-      {/* Recent files section - now displayed at the top for immediate visibility */}
       {files.length > 0 && (
         <div className="space-y-1">
           <p className="text-xs font-medium">Available files</p>
@@ -296,7 +291,6 @@ const FileUploader: React.FC<FileUploaderProps> = ({
         </div>
       )}
 
-      {/* Selected file info with simplified status display */}
       {selectedFile && (
         <div className="border rounded-lg p-3 bg-zinc-900/50 border-zinc-800 space-y-2">
           <div className="flex items-start justify-between">
@@ -325,14 +319,12 @@ const FileUploader: React.FC<FileUploaderProps> = ({
             </Button>
           </div>
           
-          {/* Simplified progress bar for uploading files */}
           {selectedFile.status === "uploading" && (
             <div className="mt-1">
               <Progress value={selectedFile.progress} className="h-1.5" />
             </div>
           )}
 
-          {/* Context textarea - Always show when a file is selected */}
           {selectedFile && (
             <div className="space-y-1 mt-2">
               <p className="text-xs font-medium">Add context about this file</p>
@@ -347,7 +339,6 @@ const FileUploader: React.FC<FileUploaderProps> = ({
         </div>
       )}
 
-      {/* File uploader area */}
       <div
         className={cn(
           "border-2 border-dashed rounded-lg p-4 transition-colors cursor-pointer",
@@ -378,15 +369,24 @@ const FileUploader: React.FC<FileUploaderProps> = ({
         </div>
       </div>
 
-      {/* Confirm selection button */}
       {selectedFile && selectedFile.status === "success" && (
-        <Button 
-          className="w-full text-sm py-1.5 h-8" 
-          size="sm"
-          onClick={() => onFileSelect?.(selectedFile)}
-        >
-          Use this file
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            className="flex-1 text-sm py-1.5 h-8" 
+            size="sm"
+            onClick={() => onFileSelect?.(selectedFile)}
+          >
+            Use this file
+          </Button>
+          <Button 
+            className="flex-1 text-sm py-1.5 h-8 gap-1" 
+            size="sm"
+            onClick={handleSubmit}
+          >
+            <Send className="h-3.5 w-3.5" />
+            Submit
+          </Button>
+        </div>
       )}
     </div>
   );
