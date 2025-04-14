@@ -1,10 +1,9 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import ChatInput from "@/components/ChatInput";
 import { useToast } from "@/hooks/use-toast";
 import { FileItem } from "@/components/FileUploader";
-import { Moon, Sun, File, ChevronDown, RefreshCw, Share2, ThumbsUp, ThumbsDown, MoreHorizontal, Eye, Copy, Terminal, Table, Search, Trash2 } from "lucide-react";
+import { Moon, Sun, File, ChevronDown, RefreshCw, Share2, ThumbsUp, ThumbsDown, MoreHorizontal, Eye, Copy, Terminal, Table, Search, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/ThemeProvider";
 import { getSubmittedFiles, submitFile } from "@/services/fileService";
@@ -43,7 +42,6 @@ const Index = () => {
   const [isFileListExpanded, setIsFileListExpanded] = useState<boolean>(true);
 
   useEffect(() => {
-    // Fetch previously submitted files when component mounts
     const fetchFiles = async () => {
       const files = await getSubmittedFiles();
       setSubmittedFiles(files);
@@ -54,7 +52,6 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
-    // Filter files based on search query
     if (searchQuery.trim() === "") {
       setFilteredFiles(submittedFiles);
     } else {
@@ -71,7 +68,6 @@ const Index = () => {
   const handleDeleteFile = (fileToDelete: FileItem) => {
     setSubmittedFiles(prev => prev.filter(file => file.id !== fileToDelete.id));
     
-    // If the active file is deleted, reset it
     if (activeFile && activeFile.id === fileToDelete.id) {
       setActiveFile(null);
     }
@@ -83,30 +79,25 @@ const Index = () => {
   };
 
   const handleSendMessage = async (message: string, file: FileItem | null) => {
-    // Add user message to chat
     const userMessageId = crypto.randomUUID();
     const userMessage: ChatMessage = {
       id: userMessageId,
       content: message,
       timestamp: new Date(),
       sender: "user",
-      file: file || activeFile, // Use either the newly selected file or the active file
+      file: file || activeFile,
     };
     
     setChatMessages(prev => [...prev, userMessage]);
     
-    // If there's a file associated with this message, make it the active file
     if (file && !activeFile) {
       setActiveFile(file);
     }
     
-    // Simulate analysis process
     setIsAnalyzing(true);
     
-    // In a real application, you would send the file and message to an API for analysis
     await new Promise(resolve => setTimeout(resolve, 1500));
     
-    // Once analysis is complete, generate mock diagnostic results
     const mockResults: DiagnosticResult = {
       summary: "The most recent timestamp in the 'metric_aws_apigateway.latency' table is 25/07/24 10:45:00.000000. This indicates the latest recorded data point for API Gateway latency metrics, which can be crucial for performance monitoring.",
       tables: [
@@ -128,7 +119,6 @@ const Index = () => {
     setDiagnosticResults(mockResults);
     setIsAnalyzing(false);
     
-    // Add assistant response to chat
     const assistantMessage: ChatMessage = {
       id: crypto.randomUUID(),
       content: "I've analyzed your diagnostic file. Here's what I found:",
@@ -163,9 +153,12 @@ const Index = () => {
     }
   };
 
+  const handleFileUploadClick = () => {
+    setIsFileListExpanded(false);
+  };
+
   return (
     <div className="w-full h-screen flex flex-col bg-zinc-950">
-      {/* Header */}
       <header className="w-full border-b border-zinc-800 py-3 px-4 bg-zinc-900/80">
         <div className="container mx-auto max-w-7xl flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -191,9 +184,7 @@ const Index = () => {
         </div>
       </header>
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-hidden flex flex-col">
-        {/* Chat History */}
+      <div className="flex-1 overflow-hidden flex flex-col h-full">
         <div className="w-full flex-1 flex flex-col h-full">
           <div className="flex-1 overflow-y-auto p-4">
             {chatMessages.length > 0 ? (
@@ -249,7 +240,6 @@ const Index = () => {
               </div>
             )}
 
-            {/* Diagnostic Results */}
             {diagnosticResults && (
               <div className="mt-6 space-y-6 mb-4">
                 <div className="bg-zinc-900/80 border border-zinc-800 rounded-lg overflow-hidden">
@@ -327,7 +317,6 @@ const Index = () => {
             )}
           </div>
 
-          {/* Diagnostic Files List - Now above the chat input */}
           <div className="border-t border-zinc-800 bg-zinc-900/50 px-4 pt-3">
             <Collapsible 
               open={isFileListExpanded}
@@ -354,7 +343,6 @@ const Index = () => {
                 </div>
               </CollapsibleTrigger>
               <CollapsibleContent>
-                {/* Search bar */}
                 <div className="mb-3 relative">
                   <div className="relative">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-zinc-500" />
@@ -379,7 +367,6 @@ const Index = () => {
                   </div>
                 </div>
                 
-                {/* Files grid */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
                   {filteredFiles.length > 0 ? (
                     filteredFiles.map((file) => (
@@ -433,7 +420,6 @@ const Index = () => {
               </CollapsibleContent>
             </Collapsible>
             
-            {/* File Info and Chat Input */}
             {activeFile && (
               <Collapsible 
                 open={isFileInfoExpanded}
@@ -473,6 +459,7 @@ const Index = () => {
               submittedFiles={submittedFiles}
               placeholder={activeFile ? "Ask about the diagnostic file..." : "Upload a diagnostic file or type a message..."}
               disabled={isAnalyzing}
+              onFileUploadClick={handleFileUploadClick}
             />
           </div>
         </div>

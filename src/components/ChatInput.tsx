@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from "react";
 import { Paperclip, Send, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,6 +13,7 @@ interface ChatInputProps {
   submittedFiles?: FileItem[];
   placeholder?: string;
   disabled?: boolean;
+  onFileUploadClick?: () => void;
 }
 
 const ChatInput: React.FC<ChatInputProps> = ({
@@ -22,6 +22,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
   submittedFiles = [],
   placeholder = "How can I help you today?",
   disabled = false,
+  onFileUploadClick,
 }) => {
   const [message, setMessage] = useState<string>("");
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
@@ -73,6 +74,16 @@ const ChatInput: React.FC<ChatInputProps> = ({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     e.stopPropagation();
     setMessage(e.target.value);
+  };
+
+  const handleFileUploadIconClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!disabled) {
+      setIsUploaderOpen(!isUploaderOpen);
+      onFileUploadClick?.();
+    }
   };
 
   return (
@@ -136,13 +147,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
               variant="ghost"
               size="icon"
               className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (!disabled) {
-                  setIsUploaderOpen(!isUploaderOpen);
-                }
-              }}
+              onClick={handleFileUploadIconClick}
               onMouseDown={(e) => e.stopPropagation()}
               data-radix-popover-trigger
               disabled={disabled}
