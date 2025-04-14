@@ -83,7 +83,7 @@ export const getSubmittedFiles = async (): Promise<FileItem[]> => {
   
   // If we don't have any files yet, create some mock files for demo purposes
   if (submittedFiles.length === 0) {
-    submittedFiles = generateMockFiles(27); // Generate files (multiple of 9 + some extras)
+    submittedFiles = generateMockFiles(1000); // Changed from 27 to 1000
     console.log("Generated mock files:", submittedFiles.length);
   }
   
@@ -107,7 +107,7 @@ export const getFilteredFiles = async (
   
   // Ensure we have files to filter
   if (submittedFiles.length === 0) {
-    submittedFiles = generateMockFiles(27); // Generate files (multiple of 9 + some extras)
+    submittedFiles = generateMockFiles(1000); // Changed from 27 to 1000
     console.log("Generated mock files in getFilteredFiles:", submittedFiles.length);
   }
   
