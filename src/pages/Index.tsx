@@ -141,7 +141,7 @@ const Index = () => {
       
       toast({
         title: "File processed successfully",
-        description: `"${file.name}" is ready for analysis.`,
+        description: `"${submittedFile.name}" is ready for analysis.`,
       });
     } catch (error) {
       toast({
