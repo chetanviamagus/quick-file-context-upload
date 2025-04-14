@@ -20,6 +20,7 @@ export interface FileItem {
 interface FileUploaderProps {
   onFileSelect?: (file: FileItem | null) => void;
   onSubmit?: (file: FileItem) => void;
+  onDelete?: (file: FileItem) => void;
   maxSizeMB?: number;
   acceptedFileTypes?: string[];
   initialSelectedFile?: FileItem | null;
@@ -29,6 +30,7 @@ interface FileUploaderProps {
 const FileUploader: React.FC<FileUploaderProps> = ({
   onFileSelect,
   onSubmit,
+  onDelete,
   maxSizeMB = 10,
   acceptedFileTypes = ["*/*"],
   initialSelectedFile = null,
@@ -168,6 +170,13 @@ const FileUploader: React.FC<FileUploaderProps> = ({
   const removeFile = (id: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    const fileToRemove = files.find(file => file.id === id);
+    if (fileToRemove) {
+      // Call the onDelete prop if provided
+      onDelete?.(fileToRemove);
+    }
+    
     setFiles(prev => prev.filter(file => file.id !== id));
     
     if (selectedFile && selectedFile.id === id) {
@@ -278,7 +287,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-6 w-6 opacity-70 hover:opacity-100 rounded-full"
+                  className="h-6 w-6 opacity-70 hover:opacity-100 hover:text-destructive rounded-full"
                   onClick={(e) => removeFile(file.id, e)}
                   onMouseDown={(e) => e.stopPropagation()}
                 >

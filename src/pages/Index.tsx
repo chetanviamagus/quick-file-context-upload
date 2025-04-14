@@ -4,11 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import ChatInput from "@/components/ChatInput";
 import { useToast } from "@/hooks/use-toast";
 import { FileItem } from "@/components/FileUploader";
-import { Moon, Sun, File, ChevronDown, RefreshCw, Share2, ThumbsUp, ThumbsDown, MoreHorizontal, Eye, Copy, Terminal, Table } from "lucide-react";
+import { Moon, Sun, File, ChevronDown, RefreshCw, Share2, ThumbsUp, ThumbsDown, MoreHorizontal, Eye, Copy, Terminal, Table, Search, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/ThemeProvider";
 import { getSubmittedFiles, submitFile } from "@/services/fileService";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Input } from "@/components/ui/input";
 
 interface ChatMessage {
   id: string;
@@ -32,6 +33,8 @@ const Index = () => {
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
   const [submittedFiles, setSubmittedFiles] = useState<FileItem[]>([]);
+  const [filteredFiles, setFilteredFiles] = useState<FileItem[]>([]);
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [activeFile, setActiveFile] = useState<FileItem | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
@@ -44,10 +47,40 @@ const Index = () => {
     const fetchFiles = async () => {
       const files = await getSubmittedFiles();
       setSubmittedFiles(files);
+      setFilteredFiles(files);
     };
     
     fetchFiles();
   }, []);
+
+  useEffect(() => {
+    // Filter files based on search query
+    if (searchQuery.trim() === "") {
+      setFilteredFiles(submittedFiles);
+    } else {
+      const query = searchQuery.toLowerCase();
+      const filtered = submittedFiles.filter(
+        file => 
+          file.name.toLowerCase().includes(query) || 
+          (file.context && file.context.toLowerCase().includes(query))
+      );
+      setFilteredFiles(filtered);
+    }
+  }, [searchQuery, submittedFiles]);
+
+  const handleDeleteFile = (fileToDelete: FileItem) => {
+    setSubmittedFiles(prev => prev.filter(file => file.id !== fileToDelete.id));
+    
+    // If the active file is deleted, reset it
+    if (activeFile && activeFile.id === fileToDelete.id) {
+      setActiveFile(null);
+    }
+    
+    toast({
+      title: "File deleted",
+      description: `"${fileToDelete.name}" has been deleted.`,
+    });
+  };
 
   const handleSendMessage = async (message: string, file: FileItem | null) => {
     // Add user message to chat
@@ -321,39 +354,79 @@ const Index = () => {
                 </div>
               </CollapsibleTrigger>
               <CollapsibleContent>
+                {/* Search bar */}
+                <div className="mb-3 relative">
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-zinc-500" />
+                    <Input
+                      type="text"
+                      placeholder="Search diagnostic files..."
+                      className="pl-9 bg-zinc-800/50 border-zinc-700 w-full text-sm"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                    {searchQuery && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-1 top-1 h-7 w-7 hover:bg-zinc-700/50"
+                        onClick={() => setSearchQuery("")}
+                        onMouseDown={(e) => e.stopPropagation()}
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Files grid */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
-                  {submittedFiles.map((file) => (
-                    <div 
-                      key={file.id}
-                      className={`flex items-center justify-between p-2 rounded-md cursor-pointer ${activeFile?.id === file.id ? 'bg-zinc-800 border border-blue-500/50' : 'bg-zinc-800/50 hover:bg-zinc-800'}`}
-                      onClick={() => setActiveFile(file)}
-                    >
-                      <div className="flex items-center gap-2 overflow-hidden">
-                        <File className="h-4 w-4 text-blue-400 flex-shrink-0" />
-                        <div className="overflow-hidden">
-                          <p className="text-sm font-medium truncate">{file.name}</p>
-                          <p className="text-xs text-zinc-400">
-                            {file.size > 1024 * 1024 
-                              ? `${(file.size / (1024 * 1024)).toFixed(2)} MB` 
-                              : `${(file.size / 1024).toFixed(2)} KB`}
-                          </p>
+                  {filteredFiles.length > 0 ? (
+                    filteredFiles.map((file) => (
+                      <div 
+                        key={file.id}
+                        className={`flex items-center justify-between p-2 rounded-md cursor-pointer ${activeFile?.id === file.id ? 'bg-zinc-800 border border-blue-500/50' : 'bg-zinc-800/50 hover:bg-zinc-800'}`}
+                        onClick={() => setActiveFile(file)}
+                      >
+                        <div className="flex items-center gap-2 overflow-hidden">
+                          <File className="h-4 w-4 text-blue-400 flex-shrink-0" />
+                          <div className="overflow-hidden">
+                            <p className="text-sm font-medium truncate">{file.name}</p>
+                            <p className="text-xs text-zinc-400">
+                              {file.size > 1024 * 1024 
+                                ? `${(file.size / (1024 * 1024)).toFixed(2)} MB` 
+                                : `${(file.size / 1024).toFixed(2)} KB`}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-7 w-7 hover:text-destructive"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteFile(file);
+                            }}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button variant="ghost" size="icon" className="h-7 w-7">
+                            <Eye className="h-3.5 w-3.5" />
+                          </Button>
                         </div>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="icon" className="h-7 w-7">
-                          <Eye className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7">
-                          <Copy className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                  
-                  {submittedFiles.length === 0 && (
+                    ))
+                  ) : (
                     <div className="col-span-full text-center py-4">
-                      <p className="text-sm text-zinc-500">No diagnostic files uploaded yet</p>
-                      <p className="text-xs text-zinc-600 mt-1">Upload a file using the paperclip icon below</p>
+                      {searchQuery ? (
+                        <p className="text-sm text-zinc-500">No files matching "{searchQuery}"</p>
+                      ) : (
+                        <>
+                          <p className="text-sm text-zinc-500">No diagnostic files uploaded yet</p>
+                          <p className="text-xs text-zinc-600 mt-1">Upload a file using the paperclip icon below</p>
+                        </>
+                      )}
                     </div>
                   )}
                 </div>

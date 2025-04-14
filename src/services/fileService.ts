@@ -58,6 +58,18 @@ export const getSubmittedFiles = async (): Promise<FileItem[]> => {
   return submittedFiles;
 };
 
+// Delete a file
+export const deleteFile = async (fileId: string): Promise<boolean> => {
+  // Simulate API call delay
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  const initialLength = submittedFiles.length;
+  submittedFiles = submittedFiles.filter(file => file.id !== fileId);
+  
+  // Return true if a file was deleted
+  return submittedFiles.length < initialLength;
+};
+
 // Analyze a diagnostic file and return results
 // In a real application, this would send the file to a backend service for analysis
 export const analyzeFile = async (fileId: string, prompt: string): Promise<any> => {
