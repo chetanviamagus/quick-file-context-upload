@@ -40,11 +40,12 @@ export const FileGrid: React.FC<FileGridProps> = ({
   } = useInfiniteScroll<FileItem>({
     threshold: 200,
     initialPage: 1,
-    loadMoreDelay: 300
+    loadMoreDelay: 500 // Increased delay to avoid too many requests
   });
   
   // Reset when search query or file types changes
   useEffect(() => {
+    setInitialLoadComplete(false);
     reset();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery, selectedFileTypes]);
@@ -53,6 +54,8 @@ export const FileGrid: React.FC<FileGridProps> = ({
   useEffect(() => {
     const fetchFiles = async (page: number) => {
       try {
+        console.log(`Fetching page ${page} with ${ITEMS_PER_PAGE} items per page`);
+        
         const { files, total } = await getFilteredFiles(
           {
             query: searchQuery,
@@ -89,11 +92,17 @@ export const FileGrid: React.FC<FileGridProps> = ({
   
   // Listen for loadmore events for infinite scrolling
   useEffect(() => {
+    if (!loaderRef.current || !hasMore) return;
+    
     const loaderElement = loaderRef.current;
     
     const handleLoadMore = async () => {
+      if (isLoading) return; // Prevent multiple simultaneous requests
+      
       const fetchFiles = async (page: number) => {
         try {
+          console.log(`Loading more: page ${page}`);
+          
           const { files, total } = await getFilteredFiles(
             {
               query: searchQuery,
@@ -120,12 +129,12 @@ export const FileGrid: React.FC<FileGridProps> = ({
       loadMore(fetchFiles);
     };
     
-    loaderElement?.addEventListener('loadmore', handleLoadMore);
+    loaderElement.addEventListener('loadmore', handleLoadMore);
     
     return () => {
-      loaderElement?.removeEventListener('loadmore', handleLoadMore);
+      loaderElement.removeEventListener('loadmore', handleLoadMore);
     };
-  }, [loadMore, loaderRef, searchQuery, selectedFileTypes]);
+  }, [loadMore, loaderRef, searchQuery, selectedFileTypes, isLoading, hasMore]);
   
   // Extract unique file types for filtering
   useEffect(() => {

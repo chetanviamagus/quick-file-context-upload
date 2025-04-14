@@ -21,39 +21,61 @@ export function useInfiniteScroll<T>({
   const isFetchingRef = useRef(false);
   
   const loadMore = useCallback(async (fetchFn: (page: number) => Promise<{ data: T[], totalCount: number, pageSize: number }>) => {
-    if (isFetchingRef.current) return;
+    if (isFetchingRef.current) {
+      console.log("Already fetching, skipping request");
+      return;
+    }
     
     try {
       isFetchingRef.current = true;
       setIsLoading(true);
       setError(null);
       
+      console.log(`Executing fetch for page ${page}`);
       const result = await fetchFn(page);
       
       // Only update items if we got valid data
       if (Array.isArray(result.data)) {
-        setItems(prevItems => 
+        setItems(prevItems => {
           // If we're on the first page, replace items, otherwise append
-          page === initialPage ? [...result.data] : [...prevItems, ...result.data]
-        );
+          if (page === initialPage) {
+            console.log(`Setting initial ${result.data.length} items`);
+            return [...result.data];
+          } else {
+            console.log(`Appending ${result.data.length} items to existing ${prevItems.length}`);
+            return [...prevItems, ...result.data];
+          }
+        });
         
         // Check if we have more items to load
-        const totalPages = Math.ceil(result.totalCount / result.pageSize);
-        setHasMore(page < totalPages);
+        const totalItems = result.totalCount;
+        const loadedItems = (page === initialPage ? 0 : items.length) + result.data.length;
+        const hasMoreItems = loadedItems < totalItems;
+        
+        console.log(`Loaded items: ${loadedItems}, Total items: ${totalItems}, Has more: ${hasMoreItems}`);
+        setHasMore(hasMoreItems);
         
         // Increment page for next fetch
-        setPage(prevPage => prevPage + 1);
+        if (hasMoreItems) {
+          setPage(prevPage => prevPage + 1);
+        }
+      } else {
+        console.warn("Invalid data format received:", result.data);
       }
     } catch (err) {
       console.error("Error loading items:", err);
       setError(err instanceof Error ? err : new Error('An error occurred while loading more items'));
     } finally {
       setIsLoading(false);
-      isFetchingRef.current = false;
+      // Use setTimeout to prevent immediate re-triggering
+      setTimeout(() => {
+        isFetchingRef.current = false;
+      }, 100);
     }
-  }, [page, initialPage]);
+  }, [page, initialPage, items.length]);
   
   const reset = useCallback(() => {
+    console.log("Resetting infinite scroll state");
     setItems([]);
     setPage(initialPage);
     setHasMore(true);
@@ -69,6 +91,7 @@ export function useInfiniteScroll<T>({
       entries => {
         const [entry] = entries;
         if (entry.isIntersecting && !isFetchingRef.current) {
+          console.log("Loader element is intersecting, triggering loadmore");
           // Add a small delay to avoid rapid firing
           setTimeout(() => {
             loaderRef.current?.dispatchEvent(new CustomEvent('loadmore'));

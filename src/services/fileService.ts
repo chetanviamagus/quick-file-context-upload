@@ -70,6 +70,7 @@ const generateMockFiles = (count: number): FileItem[] => {
     });
   }
   
+  console.log(`Generated ${count} mock files`);
   return mockFiles;
 };
 
@@ -82,7 +83,7 @@ export const getSubmittedFiles = async (): Promise<FileItem[]> => {
   
   // If we don't have any files yet, create some mock files for demo purposes
   if (submittedFiles.length === 0) {
-    submittedFiles = generateMockFiles(24); // Generate a reasonable number for initial view
+    submittedFiles = generateMockFiles(27); // Generate files (multiple of 9 + some extras)
     console.log("Generated mock files:", submittedFiles.length);
   }
   
@@ -106,7 +107,7 @@ export const getFilteredFiles = async (
   
   // Ensure we have files to filter
   if (submittedFiles.length === 0) {
-    submittedFiles = generateMockFiles(24);
+    submittedFiles = generateMockFiles(27); // Generate files (multiple of 9 + some extras)
     console.log("Generated mock files in getFilteredFiles:", submittedFiles.length);
   }
   
@@ -153,7 +154,7 @@ export const getFilteredFiles = async (
   const endIdx = startIdx + pagination.limit;
   const paginatedFiles = filtered.slice(startIdx, endIdx);
   
-  console.log(`Filtered files: ${filtered.length}, Paginated: ${paginatedFiles.length}, Page: ${pagination.page}, Limit: ${pagination.limit}`);
+  console.log(`Filtered files: ${filtered.length}, Paginated: ${paginatedFiles.length}, Page: ${pagination.page}, Limit: ${pagination.limit}, StartIdx: ${startIdx}, EndIdx: ${endIdx}`);
   
   return { files: paginatedFiles, total };
 };
