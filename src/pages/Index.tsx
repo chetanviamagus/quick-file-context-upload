@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import ChatInput from "@/components/ChatInput";
@@ -6,12 +7,12 @@ import { FileItem } from "@/components/FileUploader";
 import { Moon, Sun, File, ChevronDown, RefreshCw, Share2, ThumbsUp, ThumbsDown, MoreHorizontal, Eye, Copy, Terminal, Table, Search, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/ThemeProvider";
-import { getSubmittedFiles, submitFile } from "@/services/fileService";
+import { deleteFile, getSubmittedFiles, submitFile, analyzeFile } from "@/services/fileService";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { FileUploadStatus } from "@/components/FileUploader";
-import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { cn } from "@/lib/utils";
+import { FileGrid } from "@/components/FileGrid";
 
 interface ChatMessage {
   id: string;
@@ -23,6 +24,8 @@ interface ChatMessage {
 
 interface DiagnosticResult {
   summary: string;
+  insights?: string[];
+  recommendations?: string[];
   tables?: Array<{
     id: string;
     name: string;
@@ -35,7 +38,6 @@ const Index = () => {
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
   const [submittedFiles, setSubmittedFiles] = useState<FileItem[]>([]);
-  const [filteredFiles, setFilteredFiles] = useState<FileItem[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [activeFile, setActiveFile] = useState<FileItem | null>(null);
@@ -43,44 +45,39 @@ const Index = () => {
   const [diagnosticResults, setDiagnosticResults] = useState<DiagnosticResult | null>(null);
   const [isFileInfoExpanded, setIsFileInfoExpanded] = useState<boolean>(false);
   const [isFileListExpanded, setIsFileListExpanded] = useState<boolean>(true);
-  const [currentPage, setCurrentPage] = useState(1);
-  const filesPerPage = 9;
 
   useEffect(() => {
     const fetchFiles = async () => {
       const files = await getSubmittedFiles();
       setSubmittedFiles(files);
-      setFilteredFiles(files);
     };
     
     fetchFiles();
   }, []);
 
-  useEffect(() => {
-    if (searchQuery.trim() === "") {
-      setFilteredFiles(submittedFiles);
-    } else {
-      const query = searchQuery.toLowerCase();
-      const filtered = submittedFiles.filter(
-        file => 
-          file.name.toLowerCase().includes(query) || 
-          (file.context && file.context.toLowerCase().includes(query))
-      );
-      setFilteredFiles(filtered);
+  const handleDeleteFile = async (fileToDelete: FileItem) => {
+    try {
+      const success = await deleteFile(fileToDelete.id || '');
+      
+      if (success) {
+        setSubmittedFiles(prev => prev.filter(file => file.id !== fileToDelete.id));
+        
+        if (activeFile && activeFile.id === fileToDelete.id) {
+          setActiveFile(null);
+        }
+        
+        toast({
+          title: "File deleted",
+          description: `"${fileToDelete.name}" has been deleted.`,
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error deleting file",
+        description: "There was an error deleting the file. Please try again.",
+        variant: "destructive",
+      });
     }
-  }, [searchQuery, submittedFiles]);
-
-  const handleDeleteFile = (fileToDelete: FileItem) => {
-    setSubmittedFiles(prev => prev.filter(file => file.id !== fileToDelete.id));
-    
-    if (activeFile && activeFile.id === fileToDelete.id) {
-      setActiveFile(null);
-    }
-    
-    toast({
-      title: "File deleted",
-      description: `"${fileToDelete.name}" has been deleted.`,
-    });
   };
 
   const handleSendMessage = async (message: string, file: FileItem | null) => {
@@ -101,42 +98,51 @@ const Index = () => {
     
     setIsAnalyzing(true);
     
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    const mockResults: DiagnosticResult = {
-      summary: "The most recent timestamp in the 'metric_aws_apigateway.latency' table is 25/07/24 10:45:00.000000. This indicates the latest recorded data point for API Gateway latency metrics, which can be crucial for performance monitoring.",
-      tables: [
-        {
-          id: "latency-table",
-          name: "Latency_Table_NameIsABC",
-          columns: ["Timestamp", "Message"],
-          data: [
-            ["2024-09-26T06:27:35.225000+00:00 Local: Sep 26, 2024, 11:57:35 AM", "Error syncing pod, skipping: failed to \"StartContainer\" for \"alex-bird-..."],
-            ["2024-09-26T06:27:35.225000+00:00 Local: Sep 26, 2024, 11:57:35 AM", "Error syncing pod, skipping: failed to \"StartContainer\" for \"alex-bird-..."],
-            ["2024-09-26T06:27:35.225000+00:00 Local: Sep 26, 2024, 11:57:35 AM", "Error syncing pod, skipping: failed to \"StartContainer\" for \"alex-bird-..."],
-            ["2024-09-26T06:27:35.225000+00:00 Local: Sep 26, 2024, 11:57:35 AM", "Error syncing pod, skipping: failed to \"StartContainer\" for \"alex-bird-..."],
-            ["2024-09-26T06:27:35.225000+00:00 Local: Sep 26, 2024, 11:57:35 AM", "Error syncing pod, skipping: failed to \"StartContainer\" for \"alex-bird-..."],
-          ]
-        }
-      ]
-    };
-    
-    setDiagnosticResults(mockResults);
-    setIsAnalyzing(false);
-    
-    const assistantMessage: ChatMessage = {
-      id: crypto.randomUUID(),
-      content: "I've analyzed your diagnostic file. Here's what I found:",
-      timestamp: new Date(),
-      sender: "assistant",
-    };
-    
-    setChatMessages(prev => [...prev, assistantMessage]);
-    
-    toast({
-      title: "Analysis complete",
-      description: "Your diagnostic file has been analyzed.",
-    });
+    try {
+      let analysisResult;
+      
+      if (userMessage.file) {
+        analysisResult = await analyzeFile(userMessage.file.id || '', message);
+      } else {
+        // Handle case when no file is selected
+        analysisResult = {
+          summary: "No diagnostic file was selected for analysis. Please upload or select a file first.",
+        };
+      }
+      
+      setDiagnosticResults(analysisResult);
+      
+      const assistantMessage: ChatMessage = {
+        id: crypto.randomUUID(),
+        content: "I've analyzed your diagnostic file. Here's what I found:",
+        timestamp: new Date(),
+        sender: "assistant",
+      };
+      
+      setChatMessages(prev => [...prev, assistantMessage]);
+      
+      toast({
+        title: "Analysis complete",
+        description: "Your diagnostic file has been analyzed.",
+      });
+    } catch (error) {
+      toast({
+        title: "Analysis failed",
+        description: "There was an error analyzing your file. Please try again.",
+        variant: "destructive",
+      });
+      
+      const errorMessage: ChatMessage = {
+        id: crypto.randomUUID(),
+        content: "I encountered an error while analyzing your file. Please try again with a different file or query.",
+        timestamp: new Date(),
+        sender: "assistant",
+      };
+      
+      setChatMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   const handleFileSubmit = async (file: FileItem) => {
@@ -149,18 +155,23 @@ const Index = () => {
 
       setSubmittedFiles(prev => [submittedFile, ...prev]);
       
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Submit the file
+      const uploadedFile = await submitFile(file);
 
-      const uploadedFile: FileItem = {
-        ...file,
+      // Update the file status
+      setSubmittedFiles(prev => 
+        prev.map(f => f.id === submittedFile.id ? {
+          ...uploadedFile,
+          status: FileUploadStatus.FILE_UPLOAD_STATUS_COMPLETE,
+          progress: 100
+        } : f)
+      );
+      
+      setActiveFile({
+        ...uploadedFile,
         status: FileUploadStatus.FILE_UPLOAD_STATUS_COMPLETE,
         progress: 100
-      };
-      
-      setSubmittedFiles(prev => 
-        prev.map(f => f.id === submittedFile.id ? uploadedFile : f)
-      );
-      setActiveFile(uploadedFile);
+      });
       
       toast({
         title: "File processed successfully",
@@ -186,46 +197,25 @@ const Index = () => {
   };
 
   const handleFileUploadClick = () => {
-    setIsFileListExpanded(false);
+    setIsFileListExpanded(true);
   };
 
-  const indexOfLastFile = currentPage * filesPerPage;
-  const indexOfFirstFile = indexOfLastFile - filesPerPage;
-  const currentFiles = filteredFiles.slice(indexOfFirstFile, indexOfLastFile);
-  const totalPages = Math.ceil(filteredFiles.length / filesPerPage);
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
-
-  const getPageNumbers = () => {
-    const pages = [];
-    const maxVisiblePages = 5;
-    
-    if (totalPages <= maxVisiblePages) {
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
-    } else {
-      if (currentPage <= 3) {
-        for (let i = 1; i <= 4; i++) {
-          pages.push(i);
-        }
-        pages.push(totalPages);
-      } else if (currentPage >= totalPages - 2) {
-        pages.push(1);
-        for (let i = totalPages - 3; i <= totalPages; i++) {
-          pages.push(i);
-        }
-      } else {
-        pages.push(1);
-        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
-          pages.push(i);
-        }
-        pages.push(totalPages);
-      }
+  const handleRefreshFiles = async () => {
+    try {
+      toast({
+        title: "Refreshing files",
+        description: "Fetching the latest files...",
+      });
+      
+      const files = await getSubmittedFiles();
+      setSubmittedFiles(files);
+    } catch (error) {
+      toast({
+        title: "Error refreshing files",
+        description: "There was an error fetching the files. Please try again.",
+        variant: "destructive",
+      });
     }
-    return pages;
   };
 
   return (
@@ -297,6 +287,7 @@ const Index = () => {
                       variant="outline"
                       className="rounded-full gap-2"
                       onClick={() => {
+                        setIsFileListExpanded(true);
                         toast({
                           title: "Tip",
                           description: "Use the paperclip icon below to upload diagnostic files",
@@ -318,6 +309,34 @@ const Index = () => {
                     <h3 className="text-lg font-bold">Summary</h3>
                     <p className="text-sm mt-2 text-zinc-300">{diagnosticResults.summary}</p>
                   </div>
+
+                  {diagnosticResults.insights && diagnosticResults.insights.length > 0 && (
+                    <div className="border-t border-zinc-800 p-4">
+                      <h3 className="text-sm font-bold mb-2">Key Insights</h3>
+                      <ul className="space-y-1">
+                        {diagnosticResults.insights.map((insight, index) => (
+                          <li key={index} className="text-sm text-zinc-300 flex items-start">
+                            <span className="text-blue-400 mr-2">•</span>
+                            {insight}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {diagnosticResults.recommendations && diagnosticResults.recommendations.length > 0 && (
+                    <div className="border-t border-zinc-800 p-4">
+                      <h3 className="text-sm font-bold mb-2">Recommendations</h3>
+                      <ul className="space-y-1">
+                        {diagnosticResults.recommendations.map((rec, index) => (
+                          <li key={index} className="text-sm text-zinc-300 flex items-start">
+                            <span className="text-green-400 mr-2">•</span>
+                            {rec}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
 
                   {diagnosticResults.tables && diagnosticResults.tables.map(table => (
                     <div key={table.id} className="mt-4 border-t border-zinc-800">
@@ -405,7 +424,15 @@ const Index = () => {
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-7 gap-1 text-xs"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRefreshFiles();
+                      }}
+                    >
                       <RefreshCw className="h-3.5 w-3.5" />
                       <span className="hidden sm:inline">Refresh</span>
                     </Button>
@@ -438,56 +465,13 @@ const Index = () => {
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
-                  {currentFiles.length > 0 ? (
-                    currentFiles.map((file) => (
-                      <div 
-                        key={file.id}
-                        className={`flex items-center justify-between p-2 rounded-md cursor-pointer ${activeFile?.id === file.id ? 'bg-zinc-800 border border-blue-500/50' : 'bg-zinc-800/50 hover:bg-zinc-800'}`}
-                        onClick={() => setActiveFile(file)}
-                      >
-                        <div className="flex items-center gap-2 overflow-hidden">
-                          <File className="h-4 w-4 text-blue-400 flex-shrink-0" />
-                          <div className="overflow-hidden">
-                            <p className="text-sm font-medium truncate">{file.name}</p>
-                            <p className="text-xs text-zinc-400">
-                              {file.size > 1024 * 1024 
-                                ? `${(file.size / (1024 * 1024)).toFixed(2)} MB` 
-                                : `${(file.size / 1024).toFixed(2)} KB`}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="h-7 w-7 hover:text-destructive"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteFile(file);
-                            }}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7">
-                            <Eye className="h-3.5 w-3.5" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="col-span-full text-center py-4">
-                      {searchQuery ? (
-                        <p className="text-sm text-zinc-500">No files matching "{searchQuery}"</p>
-                      ) : (
-                        <>
-                          <p className="text-sm text-zinc-500">No diagnostic files uploaded yet</p>
-                          <p className="text-xs text-zinc-600 mt-1">Upload a file using the paperclip icon below</p>
-                        </>
-                      )}
-                    </div>
-                  )}
-                </div>
+                <FileGrid
+                  searchQuery={searchQuery}
+                  onFileSelect={setActiveFile}
+                  onFileDelete={handleDeleteFile}
+                  activeFile={activeFile}
+                  className="mb-3"
+                />
               </CollapsibleContent>
             </Collapsible>
             
@@ -536,51 +520,6 @@ const Index = () => {
           </div>
         </div>
       </div>
-
-      {filteredFiles.length > filesPerPage && (
-        <Pagination className="mb-3">
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationPrevious
-                onClick={() => handlePageChange(currentPage - 1)}
-                className={cn(
-                  "cursor-pointer",
-                  currentPage === 1 && "pointer-events-none opacity-50"
-                )}
-              />
-            </PaginationItem>
-            
-            {getPageNumbers().map((page, index, array) => (
-              <React.Fragment key={page}>
-                {index > 0 && array[index - 1] + 1 !== page && (
-                  <PaginationItem>
-                    <span className="px-2">...</span>
-                  </PaginationItem>
-                )}
-                <PaginationItem>
-                  <PaginationLink
-                    onClick={() => handlePageChange(page)}
-                    isActive={currentPage === page}
-                    className="cursor-pointer"
-                  >
-                    {page}
-                  </PaginationLink>
-                </PaginationItem>
-              </React.Fragment>
-            ))}
-            
-            <PaginationItem>
-              <PaginationNext
-                onClick={() => handlePageChange(currentPage + 1)}
-                className={cn(
-                  "cursor-pointer",
-                  currentPage === totalPages && "pointer-events-none opacity-50"
-                )}
-              />
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
-      )}
     </div>
   );
 };

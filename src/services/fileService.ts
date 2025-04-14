@@ -85,6 +85,67 @@ export const getSubmittedFiles = async (): Promise<FileItem[]> => {
   return submittedFiles;
 };
 
+// Get files with pagination and filtering
+export const getFilteredFiles = async (
+  filters: {
+    query?: string;
+    fileTypes?: string[];
+    dateRange?: { from?: Date; to?: Date };
+  },
+  pagination: {
+    page: number;
+    limit: number;
+  }
+): Promise<{ files: FileItem[]; total: number }> => {
+  // Simulate API call delay
+  await new Promise(resolve => setTimeout(resolve, 200));
+  
+  // Filter files based on criteria
+  let filtered = [...submittedFiles];
+  
+  // Apply text search filter
+  if (filters.query && filters.query.trim() !== '') {
+    const query = filters.query.toLowerCase();
+    filtered = filtered.filter(
+      file => 
+        file.name.toLowerCase().includes(query) || 
+        (file.context && file.context.toLowerCase().includes(query))
+    );
+  }
+  
+  // Apply file type filter
+  if (filters.fileTypes && filters.fileTypes.length > 0) {
+    filtered = filtered.filter(file => 
+      filters.fileTypes?.includes(file.type)
+    );
+  }
+  
+  // Apply date range filter
+  if (filters.dateRange) {
+    if (filters.dateRange.from) {
+      filtered = filtered.filter(file => 
+        file.lastModified >= filters.dateRange!.from!.getTime()
+      );
+    }
+    
+    if (filters.dateRange.to) {
+      filtered = filtered.filter(file => 
+        file.lastModified <= filters.dateRange!.to!.getTime()
+      );
+    }
+  }
+  
+  // Get total count before pagination
+  const total = filtered.length;
+  
+  // Apply pagination
+  const startIdx = (pagination.page - 1) * pagination.limit;
+  const endIdx = startIdx + pagination.limit;
+  const paginatedFiles = filtered.slice(startIdx, endIdx);
+  
+  return { files: paginatedFiles, total };
+};
+
 // Delete a file
 export const deleteFile = async (fileId: string): Promise<boolean> => {
   // Simulate API call delay
