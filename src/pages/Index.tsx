@@ -9,6 +9,7 @@ import { useTheme } from "@/components/ThemeProvider";
 import { getSubmittedFiles, submitFile } from "@/services/fileService";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
+import { FileUploadStatus } from "@/components/FileUploader";
 
 interface ChatMessage {
   id: string;
@@ -136,15 +137,42 @@ const Index = () => {
 
   const handleFileSubmit = async (file: FileItem) => {
     try {
-      const submittedFile = await submitFile(file);
+      const submittedFile: FileItem = {
+        ...file,
+        status: FileUploadStatus.FILE_UPLOAD_STATUS_IN_PROGRESS,
+        progress: 0
+      };
+
       setSubmittedFiles(prev => [submittedFile, ...prev]);
-      setActiveFile(submittedFile);
+      
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      const uploadedFile: FileItem = {
+        ...file,
+        status: FileUploadStatus.FILE_UPLOAD_STATUS_COMPLETE,
+        progress: 100
+      };
+      
+      setSubmittedFiles(prev => 
+        prev.map(f => f.id === submittedFile.id ? uploadedFile : f)
+      );
+      setActiveFile(uploadedFile);
       
       toast({
         title: "File processed successfully",
         description: `"${file.name}" is ready for analysis.`,
       });
     } catch (error) {
+      const failedFile: FileItem = {
+        ...file,
+        status: FileUploadStatus.FILE_UPLOAD_STATUS_FAILED,
+        progress: 0
+      };
+
+      setSubmittedFiles(prev => 
+        prev.map(f => f.id === file.id ? failedFile : f)
+      );
+
       toast({
         title: "Error processing file",
         description: "There was an error processing your diagnostic file. Please try again.",

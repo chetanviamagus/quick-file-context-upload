@@ -1,9 +1,17 @@
+
 import React, { useState, useRef, useEffect } from "react";
 import { Upload, X, File as FileIcon, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+
+export enum FileUploadStatus {
+  FILE_UPLOAD_STATUS_UNSPECIFIED = "unspecified",
+  FILE_UPLOAD_STATUS_IN_PROGRESS = "in_progress",
+  FILE_UPLOAD_STATUS_COMPLETE = "complete",
+  FILE_UPLOAD_STATUS_FAILED = "failed"
+}
 
 export interface FileItem {
   id: string;
@@ -12,7 +20,7 @@ export interface FileItem {
   type: string;
   context: string;
   lastModified: number;
-  status?: "uploading" | "success" | "error";
+  status: FileUploadStatus;
   progress?: number;
 }
 
