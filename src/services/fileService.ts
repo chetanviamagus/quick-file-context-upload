@@ -17,6 +17,61 @@ export const submitFile = async (file: FileItem): Promise<FileItem> => {
   return submittedFile;
 };
 
+// Generate a batch of mock files for demo purposes
+const generateMockFiles = (count: number): FileItem[] => {
+  const fileTypes = ["application/gzip", "application/json", "text/plain", "application/yaml", "text/csv"];
+  const fileExtensions = [".tgz", ".json", ".log", ".yaml", ".csv"];
+  const fileContexts = [
+    "Production Kubernetes cluster logs",
+    "API Gateway performance metrics",
+    "Application's diagnostics bundle",
+    "Database performance logs",
+    "Service mesh traffic data",
+    "Container orchestration logs",
+    "Infrastructure scaling events",
+    "Network latency measurements",
+    "Authentication service audit logs",
+    "Cache hit/miss statistics"
+  ];
+  const filePrefixes = [
+    "diags", "logs", "metrics", "perf", "audit", 
+    "debug", "trace", "system", "app", "api",
+    "backend", "frontend", "database", "cache", "auth",
+    "network", "infra", "monitoring", "security", "events"
+  ];
+
+  const mockFiles: FileItem[] = [];
+  
+  for (let i = 0; i < count; i++) {
+    const typeIndex = i % fileTypes.length;
+    const fileType = fileTypes[typeIndex];
+    const fileExtension = fileExtensions[typeIndex];
+    const contextIndex = i % fileContexts.length;
+    const context = fileContexts[contextIndex];
+    const prefixIndex = Math.floor(i / 5) % filePrefixes.length;
+    const prefix = filePrefixes[prefixIndex];
+    
+    // Calculate a file size between 100KB and 30MB
+    const fileSize = 100000 + Math.floor(Math.random() * 30000000);
+    
+    // Create a date between 1 day ago and 30 days ago
+    const date = new Date();
+    date.setDate(date.getDate() - (1 + Math.floor(Math.random() * 30)));
+    
+    mockFiles.push({
+      id: crypto.randomUUID(),
+      name: `${prefix}-${i + 1}${fileExtension}`,
+      size: fileSize,
+      type: fileType,
+      context: `${context} from ${date.toLocaleDateString()}`,
+      lastModified: date.getTime(),
+      status: FileUploadStatus.FILE_UPLOAD_STATUS_COMPLETE
+    });
+  }
+  
+  return mockFiles;
+};
+
 // Get all previously submitted files
 export const getSubmittedFiles = async (): Promise<FileItem[]> => {
   // Simulate API call delay
@@ -24,35 +79,7 @@ export const getSubmittedFiles = async (): Promise<FileItem[]> => {
   
   // If we don't have any files yet, create some mock files for demo purposes
   if (submittedFiles.length === 0) {
-    submittedFiles = [
-      {
-        id: crypto.randomUUID(),
-        name: "kubernetes-logs.tgz",
-        size: 4500000,
-        type: "application/gzip",
-        context: "Production Kubernetes cluster that experienced 503 errors",
-        lastModified: Date.now() - 3600000,
-        status: FileUploadStatus.FILE_UPLOAD_STATUS_COMPLETE
-      },
-      {
-        id: crypto.randomUUID(),
-        name: "api-metrics.json",
-        size: 1240000,
-        type: "application/json",
-        context: "API Gateway performance metrics from last 24 hours",
-        lastModified: Date.now() - 7200000,
-        status: FileUploadStatus.FILE_UPLOAD_STATUS_COMPLETE
-      },
-      {
-        id: crypto.randomUUID(),
-        name: "diags.tgz",
-        size: 8900000,
-        type: "application/gzip",
-        context: "Application's diagnostics bundle from production Kubernetes cluster",
-        lastModified: Date.now() - 86400000,
-        status: FileUploadStatus.FILE_UPLOAD_STATUS_COMPLETE
-      }
-    ];
+    submittedFiles = generateMockFiles(1000);
   }
   
   return submittedFiles;
