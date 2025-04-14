@@ -28,8 +28,10 @@ const ChatInput: React.FC<ChatInputProps> = ({
   const { toast } = useToast();
 
   const handleSend = (e?: React.MouseEvent) => {
-    e?.preventDefault();
-    e?.stopPropagation();
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     
     if ((!message.trim() && !selectedFile) || (message.trim().length === 0 && !selectedFile)) {
       toast({
@@ -71,22 +73,12 @@ const ChatInput: React.FC<ChatInputProps> = ({
     setMessage(e.target.value);
   };
 
-  // Prevent events from bubbling up to parent elements
-  const handleMouseDown = (e: React.MouseEvent) => {
-    e.stopPropagation();
-  };
-
-  const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-  };
-
-  const handlePopoverOpenChange = (open: boolean) => {
-    // Use this function to control when the popover opens/closes
-    setIsUploaderOpen(open);
-  };
-
   return (
-    <div className="relative w-full" onMouseDown={handleMouseDown} onClick={handleClick}>
+    <div 
+      className="relative w-full" 
+      onClick={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
+    >
       {selectedFile && (
         <div className="absolute -top-14 left-0 right-0 p-2 bg-zinc-900 rounded-t-md border border-zinc-800">
           <div className="flex items-center justify-between gap-2">
@@ -130,7 +122,9 @@ const ChatInput: React.FC<ChatInputProps> = ({
       )}>
         <Popover 
           open={isUploaderOpen} 
-          onOpenChange={handlePopoverOpenChange}
+          onOpenChange={(open) => {
+            setIsUploaderOpen(open);
+          }}
         >
           <PopoverTrigger asChild>
             <Button
@@ -140,8 +134,10 @@ const ChatInput: React.FC<ChatInputProps> = ({
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                setIsUploaderOpen(!isUploaderOpen);
               }}
               onMouseDown={(e) => e.stopPropagation()}
+              data-radix-popover-trigger
             >
               <Paperclip className="h-5 w-5" />
             </Button>
@@ -158,14 +154,10 @@ const ChatInput: React.FC<ChatInputProps> = ({
             <FileUploader
               onFileSelect={(file) => {
                 setSelectedFile(file);
-                if (file && file.status === "success") {
-                  // Don't auto-close - let user add context
-                  // setIsUploaderOpen(false);
-                }
               }}
               onSubmit={(file) => {
                 handleFileSubmit(file);
-                setIsUploaderOpen(false);
+                // Don't auto-close - let the handleFileSubmit function control this
               }}
               maxSizeMB={20}
               acceptedFileTypes={["*/*"]}

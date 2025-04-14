@@ -81,6 +81,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     event.stopPropagation();
+    event.preventDefault();
     const fileList = event.target.files;
     if (fileList && fileList.length > 0) {
       const file = fileList[0];
@@ -226,22 +227,11 @@ const FileUploader: React.FC<FileUploaderProps> = ({
                                    selectedFile.status === "success" && 
                                    context.trim() !== "";
 
-  // Add event handlers to prevent dialog closing                                 
-  const handleMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
-  const handleClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
   return (
     <div 
       className="w-full space-y-3" 
-      onMouseDown={handleMouseDown} 
-      onClick={handleClick}
+      onClick={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
       onKeyDown={(e) => e.stopPropagation()}
     >
       {files.length > 0 && (
@@ -356,7 +346,9 @@ const FileUploader: React.FC<FileUploaderProps> = ({
           onChange={handleFileChange}
           className="hidden"
           accept={acceptedFileTypes.join(",")}
-          onClick={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+          }}
           onKeyDown={(e) => e.stopPropagation()}
         />
         

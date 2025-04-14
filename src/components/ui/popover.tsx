@@ -22,9 +22,13 @@ const PopoverContent = React.forwardRef<
         className
       )}
       onOpenAutoFocus={(e) => e.preventDefault()}
-      onClick={(e) => e.stopPropagation()}
-      onMouseDown={(e) => e.stopPropagation()}
-      onKeyDown={(e) => e.stopPropagation()}
+      onInteractOutside={(e) => {
+        const target = e.target as HTMLElement;
+        // Don't close if clicking on the trigger button or its children
+        if (target.closest('[data-radix-popover-trigger]')) {
+          e.preventDefault();
+        }
+      }}
       {...props}
     />
   </PopoverPrimitive.Portal>
