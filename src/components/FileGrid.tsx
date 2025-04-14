@@ -17,7 +17,7 @@ interface FileGridProps {
   className?: string;
 }
 
-const ITEMS_PER_PAGE = 12;
+const ITEMS_PER_PAGE = 9; // Changed from 12 to 9
 
 export const FileGrid: React.FC<FileGridProps> = ({
   searchQuery,
@@ -188,7 +188,7 @@ export const FileGrid: React.FC<FileGridProps> = ({
         </ScrollArea>
       )}
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 min-h-[400px]">
         {files.length > 0 ? (
           files.map((file) => (
             <div 
