@@ -1,6 +1,5 @@
-
 import React, { useState, useRef, useEffect } from "react";
-import { Upload, X, File, PaperclipIcon, Trash2, CheckCircle, Send, AlertCircle } from "lucide-react";
+import { Upload, X, File as FileIcon, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -36,61 +35,11 @@ const FileUploader: React.FC<FileUploaderProps> = ({
   initialSelectedFile = null,
   previouslySubmittedFiles = [],
 }) => {
-  const [files, setFiles] = useState<FileItem[]>([]);
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(initialSelectedFile);
   const [context, setContext] = useState<string>(initialSelectedFile?.context || "");
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
-
-  useEffect(() => {
-    // Initialize with previously submitted files
-    if (files.length === 0 && previouslySubmittedFiles.length > 0) {
-      setFiles(previouslySubmittedFiles);
-    } else if (files.length === 0) {
-      // Default sample files for DevOps/SRE context
-      const mockFiles: FileItem[] = [
-        {
-          id: "1",
-          name: "logs.tgz",
-          size: 3500000,
-          type: "application/gzip",
-          context: "API Gateway logs from production",
-          lastModified: Date.now() - 86400000,
-          status: "success",
-          progress: 100
-        },
-        {
-          id: "2",
-          name: "metrics.json",
-          size: 1200000,
-          type: "application/json",
-          context: "Kubernetes cluster metrics",
-          lastModified: Date.now() - 172800000,
-          status: "success",
-          progress: 100
-        },
-        {
-          id: "3",
-          name: "diagnostics.tgz",
-          size: 5800000,
-          type: "application/gzip",
-          context: "System diagnostics from pod crash",
-          lastModified: Date.now() - 43200000,
-          status: "success",
-          progress: 100
-        }
-      ];
-      setFiles([...previouslySubmittedFiles, ...mockFiles]);
-    }
-  }, [files.length, previouslySubmittedFiles]);
-
-  useEffect(() => {
-    if (initialSelectedFile) {
-      setSelectedFile(initialSelectedFile);
-      setContext(initialSelectedFile.context || "");
-    }
-  }, [initialSelectedFile]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     event.stopPropagation();
@@ -134,7 +83,6 @@ const FileUploader: React.FC<FileUploaderProps> = ({
         progress: 100
       };
 
-      setFiles(prev => [...prev, newFile]);
       setSelectedFile(newFile);
       setContext("");
     }
@@ -153,42 +101,15 @@ const FileUploader: React.FC<FileUploaderProps> = ({
     if (selectedFile) {
       const updatedFile = { ...selectedFile, context: newContext };
       setSelectedFile(updatedFile);
-      setFiles(prev => prev.map(f => f.id === selectedFile.id ? updatedFile : f));
       
       onFileSelect?.(updatedFile);
     }
   };
 
-  const selectExistingFile = (file: FileItem, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setSelectedFile(file);
-    setContext(file.context || "");
-    onFileSelect?.(file);
-  };
-
-  const removeFile = (id: string, e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    
-    const fileToRemove = files.find(file => file.id === id);
-    if (fileToRemove) {
-      // Call the onDelete prop if provided
-      onDelete?.(fileToRemove);
-    }
-    
-    setFiles(prev => prev.filter(file => file.id !== id));
-    
-    if (selectedFile && selectedFile.id === id) {
-      setSelectedFile(null);
-      setContext("");
-      onFileSelect?.(null);
-    }
-    
-    toast({
-      title: "File removed",
-      description: "The file has been removed",
-    });
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -220,33 +141,6 @@ const FileUploader: React.FC<FileUploaderProps> = ({
     }
   };
 
-  const formatFileSize = (bytes: number): string => {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  };
-
-  const handleSubmit = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (selectedFile && selectedFile.status === "success") {
-      if (!selectedFile.context || selectedFile.context.trim() === "") {
-        toast({
-          title: "Context required",
-          description: "Please add context about this diagnostic file to help with analysis.",
-          variant: "destructive",
-        });
-        return;
-      }
-      
-      onSubmit?.(selectedFile);
-    }
-  };
-
-  const isSelectedFileSubmittable = selectedFile && 
-                                   selectedFile.status === "success" && 
-                                   context.trim() !== "";
-
   return (
     <div 
       className="w-full space-y-3" 
@@ -254,60 +148,14 @@ const FileUploader: React.FC<FileUploaderProps> = ({
       onMouseDown={(e) => e.stopPropagation()}
       onKeyDown={(e) => e.stopPropagation()}
     >
-      {files.length > 0 && (
-        <div className="space-y-1">
-          <p className="text-xs font-medium text-zinc-400">Recent diagnostic files</p>
-          <ul className="space-y-1.5 max-h-[120px] overflow-y-auto pr-1">
-            {files.map((file) => (
-              <li 
-                key={file.id}
-                className={cn(
-                  "flex items-center justify-between p-2 rounded-md cursor-pointer hover:bg-zinc-800/50 text-sm",
-                  selectedFile?.id === file.id ? "bg-zinc-800" : "bg-zinc-900/70"
-                )}
-                onClick={(e) => selectExistingFile(file, e)}
-                onMouseDown={(e) => e.stopPropagation()}
-              >
-                <div className="flex items-center gap-2 overflow-hidden">
-                  <div className="flex-shrink-0">
-                    <File className="h-3.5 w-3.5 text-muted-foreground" />
-                  </div>
-                  <div className="overflow-hidden">
-                    <div className="flex items-center">
-                      <p className="text-xs font-medium truncate max-w-[150px]">{file.name}</p>
-                      {file.context && (
-                        <span className="text-xs text-zinc-500 ml-1.5 truncate">
-                          - {file.context.substring(0, 15)}{file.context.length > 15 ? '...' : ''}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 opacity-70 hover:opacity-100 hover:text-destructive rounded-full"
-                  onClick={(e) => removeFile(file.id, e)}
-                  onMouseDown={(e) => e.stopPropagation()}
-                >
-                  <Trash2 className="h-3 w-3 text-destructive" />
-                </Button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
       {selectedFile && (
         <div className="border rounded-lg p-3 bg-zinc-900/50 border-zinc-800 space-y-2">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2">
-              <File className="h-7 w-7 text-primary" />
+              <FileIcon className="h-7 w-7 text-primary" />
               <div>
                 <div className="flex items-center gap-1">
                   <p className="font-medium text-sm truncate max-w-[160px]">{selectedFile.name}</p>
-                  {selectedFile.status === "success" && <CheckCircle className="h-3.5 w-3.5 text-green-400" />}
                 </div>
                 <p className="text-xs text-muted-foreground">{formatFileSize(selectedFile.size)}</p>
               </div>
@@ -384,17 +232,6 @@ const FileUploader: React.FC<FileUploaderProps> = ({
           </p>
         </div>
       </div>
-
-      {isSelectedFileSubmittable && (
-        <Button 
-          className="w-full gap-2 py-2"
-          onClick={handleSubmit}
-          onMouseDown={(e) => e.stopPropagation()}
-        >
-          <Send className="h-4 w-4" />
-          Submit Diagnostics File
-        </Button>
-      )}
     </div>
   );
 };
