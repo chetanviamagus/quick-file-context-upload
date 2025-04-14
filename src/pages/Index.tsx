@@ -159,7 +159,7 @@ const Index = () => {
 
   return (
     <div className="w-full h-screen flex flex-col bg-zinc-950">
-      <header className="w-full border-b border-zinc-800 py-3 px-4 bg-zinc-900/80">
+      <header className="w-full border-b border-zinc-800 py-3 px-4 bg-zinc-900">
         <div className="container mx-auto max-w-7xl flex items-center justify-between">
           <div className="flex items-center gap-4">
             <h1 className="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-600 bg-clip-text text-transparent">
@@ -317,7 +317,7 @@ const Index = () => {
             )}
           </div>
 
-          <div className="border-t border-zinc-800 bg-zinc-900/50 px-4 pt-3">
+          <div className="border-t border-zinc-800 bg-zinc-900 px-4 pt-3">
             <Collapsible 
               open={isFileListExpanded}
               onOpenChange={setIsFileListExpanded}
@@ -372,7 +372,7 @@ const Index = () => {
                     filteredFiles.map((file) => (
                       <div 
                         key={file.id}
-                        className={`flex items-center justify-between p-2 rounded-md cursor-pointer ${activeFile?.id === file.id ? 'bg-zinc-800 border border-blue-500/50' : 'bg-zinc-800/50 hover:bg-zinc-800'}`}
+                        className={`flex items-center justify-between p-2 rounded-md cursor-pointer ${activeFile?.id === file.id ? 'bg-zinc-800 border border-blue-500/50' : 'bg-zinc-800 hover:bg-zinc-700'}`}
                         onClick={() => setActiveFile(file)}
                       >
                         <div className="flex items-center gap-2 overflow-hidden">
