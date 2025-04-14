@@ -92,42 +92,6 @@ const ChatInput: React.FC<ChatInputProps> = ({
       onClick={(e) => e.stopPropagation()}
       onMouseDown={(e) => e.stopPropagation()}
     >
-      {selectedFile && (
-        <div className="absolute -top-14 left-0 right-0 p-2 bg-zinc-900/80 rounded-t-md border border-zinc-800">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 overflow-hidden">
-              <div className="rounded-md bg-primary/10 p-1.5">
-                <Paperclip className="h-4 w-4 text-primary" />
-              </div>
-              <div className="overflow-hidden">
-                <div className="flex items-center">
-                  <p className="text-sm font-medium truncate">{selectedFile.name}</p>
-                  {selectedFile.status === "success" && (
-                    <span className="text-xs text-green-400 ml-1.5">✓</span>
-                  )}
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  {formatFileSize(selectedFile.size)}
-                  {selectedFile.context && ` • ${selectedFile.context.substring(0, 20)}${selectedFile.context.length > 20 ? '...' : ''}`}
-                </p>
-              </div>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6 rounded-full"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setSelectedFile(null);
-              }}
-            >
-              <X className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-        </div>
-      )}
-
       <div className={cn(
         "flex items-center gap-1.5 w-full border bg-zinc-900/80 rounded-md px-2 py-1.5",
         selectedFile ? "rounded-t-none border-t-0" : "",
