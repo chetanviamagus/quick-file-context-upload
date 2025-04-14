@@ -15,7 +15,7 @@ interface ChatInputProps {
 
 const ChatInput: React.FC<ChatInputProps> = ({
   onSend,
-  placeholder = "Upload a file so we can get started...",
+  placeholder = "Upload a file or type a message...",
 }) => {
   const [message, setMessage] = useState<string>("");
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
@@ -125,6 +125,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
               }}
               maxSizeMB={20}
               acceptedFileTypes={["*/*"]}
+              initialSelectedFile={selectedFile}
             />
           </PopoverContent>
         </Popover>

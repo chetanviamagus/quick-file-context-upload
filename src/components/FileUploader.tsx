@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Upload, X, File, PaperclipIcon, Trash2, CheckCircle, AlertCircle, Loader } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -22,19 +22,62 @@ interface FileUploaderProps {
   onFileSelect?: (file: FileItem | null) => void;
   maxSizeMB?: number;
   acceptedFileTypes?: string[];
+  initialSelectedFile?: FileItem | null;
 }
 
 const FileUploader: React.FC<FileUploaderProps> = ({
   onFileSelect,
   maxSizeMB = 10,
   acceptedFileTypes = ["*/*"],
+  initialSelectedFile = null,
 }) => {
+  // Static list of files for demo purposes - in a real app, this would come from your backend
   const [files, setFiles] = useState<FileItem[]>([]);
-  const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
-  const [context, setContext] = useState<string>("");
+  const [selectedFile, setSelectedFile] = useState<FileItem | null>(initialSelectedFile);
+  const [context, setContext] = useState<string>(initialSelectedFile?.context || "");
   const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [showContextInput, setShowContextInput] = useState<boolean>(!!initialSelectedFile);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  // Initialize with some mock files for demo purposes
+  useEffect(() => {
+    // Check if we already have files to avoid duplicating them on each render
+    if (files.length === 0) {
+      const mockFiles: FileItem[] = [
+        {
+          id: "1",
+          name: "document.pdf",
+          size: 2500000,
+          type: "application/pdf",
+          context: "Project proposal",
+          lastModified: Date.now() - 86400000, // 1 day ago
+          status: "success",
+          progress: 100
+        },
+        {
+          id: "2",
+          name: "image.jpg",
+          size: 1200000,
+          type: "image/jpeg",
+          context: "Product screenshot",
+          lastModified: Date.now() - 172800000, // 2 days ago
+          status: "success",
+          progress: 100
+        }
+      ];
+      setFiles(mockFiles);
+    }
+  }, [files.length]);
+
+  // Set initial context from selected file if any
+  useEffect(() => {
+    if (initialSelectedFile) {
+      setSelectedFile(initialSelectedFile);
+      setContext(initialSelectedFile.context || "");
+      setShowContextInput(true);
+    }
+  }, [initialSelectedFile]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const fileList = event.target.files;
@@ -82,6 +125,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
       setFiles(prev => [...prev, newFile]);
       setSelectedFile(newFile);
       setContext("");
+      setShowContextInput(false);
       
       // Simulate file upload progress
       simulateUpload(newFile);
@@ -115,6 +159,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
               ? { ...prev, status: "success" as const, progress: 100 } 
               : prev
           );
+          setShowContextInput(true);
         }
 
         toast({
@@ -143,19 +188,24 @@ const FileUploader: React.FC<FileUploaderProps> = ({
   };
 
   const handleContextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setContext(e.target.value);
+    const newContext = e.target.value;
+    setContext(newContext);
     
     if (selectedFile) {
       // Update context for the selected file
-      const updatedFile = { ...selectedFile, context: e.target.value };
+      const updatedFile = { ...selectedFile, context: newContext };
       setSelectedFile(updatedFile);
       setFiles(prev => prev.map(f => f.id === selectedFile.id ? updatedFile : f));
+      
+      // Notify the parent component about the context change
+      onFileSelect?.(updatedFile);
     }
   };
 
   const selectExistingFile = (file: FileItem) => {
     setSelectedFile(file);
-    setContext(file.context);
+    setContext(file.context || "");
+    setShowContextInput(file.status === "success");
     onFileSelect?.(file);
   };
 
@@ -166,6 +216,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
     if (selectedFile && selectedFile.id === id) {
       setSelectedFile(null);
       setContext("");
+      setShowContextInput(false);
       onFileSelect?.(null);
     }
     
@@ -225,9 +276,106 @@ const FileUploader: React.FC<FileUploaderProps> = ({
     return null;
   };
 
+  // Show the list of files first for better UX
   return (
     <div className="w-full space-y-3">
-      {/* File uploader area - more compact for the popover */}
+      {/* Recent files section - now displayed at the top for immediate visibility */}
+      {files.length > 0 && (
+        <div className="space-y-1">
+          <p className="text-xs font-medium">Available files</p>
+          <ul className="space-y-1.5 max-h-[120px] overflow-y-auto pr-1">
+            {files.map((file) => (
+              <li 
+                key={file.id}
+                className={cn(
+                  "flex items-center justify-between p-2 rounded-md cursor-pointer hover:bg-zinc-800/50 text-sm",
+                  selectedFile?.id === file.id ? "bg-zinc-800" : "bg-zinc-900"
+                )}
+                onClick={() => selectExistingFile(file)}
+              >
+                <div className="flex items-center gap-2 overflow-hidden">
+                  <div className="flex items-center gap-1">
+                    <PaperclipIcon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    {getStatusIcon(file)}
+                  </div>
+                  <div className="overflow-hidden">
+                    <div className="flex items-center">
+                      <p className="text-xs font-medium truncate max-w-[150px]">{file.name}</p>
+                      {file.context && <span className="text-xs text-zinc-500 ml-1.5">- {file.context.substring(0, 15)}{file.context.length > 15 ? '...' : ''}</span>}
+                    </div>
+                    <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 opacity-70 hover:opacity-100 rounded-full"
+                  onClick={(e) => removeFile(file.id, e)}
+                >
+                  <Trash2 className="h-3 w-3 text-destructive" />
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Selected file info with progress and status */}
+      {selectedFile && (
+        <div className="border rounded-lg p-3 bg-zinc-900/50 border-zinc-800">
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-2">
+              <File className="h-7 w-7 text-primary" />
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="font-medium text-sm truncate max-w-[160px]">{selectedFile.name}</p>
+                  {getStatusIcon(selectedFile)}
+                </div>
+                <p className="text-xs text-muted-foreground">{formatFileSize(selectedFile.size)}</p>
+              </div>
+            </div>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-7 w-7 rounded-full"
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedFile(null);
+                setContext("");
+                setShowContextInput(false);
+                onFileSelect?.(null);
+              }}
+            >
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+          
+          {/* Progress bar for uploading files */}
+          {selectedFile.status === "uploading" && (
+            <div className="mt-2">
+              <Progress value={selectedFile.progress} className="h-1.5" />
+              <p className="text-xs text-muted-foreground mt-1">
+                Uploading: {selectedFile.progress}%
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Context textarea - Always show when a file is successfully uploaded */}
+      {selectedFile && showContextInput && (
+        <div className="space-y-1">
+          <p className="text-xs font-medium">Add context about this file</p>
+          <Textarea
+            placeholder="What's this file about?"
+            className="min-h-[60px] resize-none text-sm bg-zinc-900 border-zinc-700"
+            value={context}
+            onChange={handleContextChange}
+          />
+        </div>
+      )}
+
+      {/* File uploader area - at the bottom now */}
       <div
         className={cn(
           "border-2 border-dashed rounded-lg p-4 transition-colors cursor-pointer",
@@ -257,98 +405,6 @@ const FileUploader: React.FC<FileUploaderProps> = ({
           </p>
         </div>
       </div>
-
-      {/* Selected file info with progress and status */}
-      {selectedFile && (
-        <div className="border rounded-lg p-3 bg-zinc-900/50 border-zinc-800">
-          <div className="flex items-start justify-between">
-            <div className="flex items-center gap-2">
-              <File className="h-7 w-7 text-primary" />
-              <div>
-                <div className="flex items-center gap-2">
-                  <p className="font-medium text-sm truncate max-w-[160px]">{selectedFile.name}</p>
-                  {getStatusIcon(selectedFile)}
-                </div>
-                <p className="text-xs text-muted-foreground">{formatFileSize(selectedFile.size)}</p>
-              </div>
-            </div>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-7 w-7 rounded-full"
-              onClick={(e) => {
-                e.stopPropagation();
-                setSelectedFile(null);
-                setContext("");
-                onFileSelect?.(null);
-              }}
-            >
-              <X className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-          
-          {/* Progress bar for uploading files */}
-          {selectedFile.status === "uploading" && (
-            <div className="mt-2">
-              <Progress value={selectedFile.progress} className="h-1.5" />
-              <p className="text-xs text-muted-foreground mt-1">
-                Uploading: {selectedFile.progress}%
-              </p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Context textarea - Prominently displayed */}
-      {selectedFile && selectedFile.status === "success" && (
-        <div className="space-y-1">
-          <p className="text-xs font-medium">Add context about this file</p>
-          <Textarea
-            placeholder="What's this file about?"
-            className="min-h-[60px] resize-none text-sm bg-zinc-900 border-zinc-700"
-            value={context}
-            onChange={handleContextChange}
-          />
-        </div>
-      )}
-
-      {/* Previously uploaded files */}
-      {files.length > 0 && (
-        <div className="space-y-1">
-          <p className="text-xs font-medium">Recent files</p>
-          <ul className="space-y-1.5 max-h-[120px] overflow-y-auto pr-1">
-            {files.map((file) => (
-              <li 
-                key={file.id}
-                className={cn(
-                  "flex items-center justify-between p-2 rounded-md cursor-pointer hover:bg-zinc-800/50 text-sm",
-                  selectedFile?.id === file.id ? "bg-zinc-800" : "bg-zinc-900"
-                )}
-                onClick={() => selectExistingFile(file)}
-              >
-                <div className="flex items-center gap-2 overflow-hidden">
-                  <div className="flex items-center gap-1">
-                    <PaperclipIcon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                    {getStatusIcon(file)}
-                  </div>
-                  <div className="overflow-hidden">
-                    <p className="text-xs font-medium truncate max-w-[150px]">{file.name}</p>
-                    <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 opacity-70 hover:opacity-100 rounded-full"
-                  onClick={(e) => removeFile(file.id, e)}
-                >
-                  <Trash2 className="h-3 w-3 text-destructive" />
-                </Button>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
 
       {/* Confirm selection button */}
       {selectedFile && selectedFile.status === "success" && (
