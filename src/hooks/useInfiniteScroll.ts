@@ -30,14 +30,20 @@ export function useInfiniteScroll<T>({
       
       const result = await fetchFn(page);
       
-      setItems(prevItems => [...prevItems, ...result.data]);
-      
-      // Check if we have more items to load
-      const totalPages = Math.ceil(result.totalCount / result.pageSize);
-      setHasMore(page < totalPages);
-      
-      // Increment page for next fetch
-      setPage(prevPage => prevPage + 1);
+      // Only update items if we got valid data
+      if (Array.isArray(result.data)) {
+        setItems(prevItems => 
+          // If we're on the first page, replace items, otherwise append
+          page === initialPage ? [...result.data] : [...prevItems, ...result.data]
+        );
+        
+        // Check if we have more items to load
+        const totalPages = Math.ceil(result.totalCount / result.pageSize);
+        setHasMore(page < totalPages);
+        
+        // Increment page for next fetch
+        setPage(prevPage => prevPage + 1);
+      }
     } catch (err) {
       console.error("Error loading items:", err);
       setError(err instanceof Error ? err : new Error('An error occurred while loading more items'));
@@ -45,13 +51,14 @@ export function useInfiniteScroll<T>({
       setIsLoading(false);
       isFetchingRef.current = false;
     }
-  }, [page]);
+  }, [page, initialPage]);
   
   const reset = useCallback(() => {
     setItems([]);
     setPage(initialPage);
     setHasMore(true);
     setError(null);
+    isFetchingRef.current = false;
   }, [initialPage]);
   
   // Observer for intersection detection
