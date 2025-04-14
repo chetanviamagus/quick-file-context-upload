@@ -13,13 +13,15 @@ interface ChatInputProps {
   onFileSubmit?: (file: FileItem) => void;
   submittedFiles?: FileItem[];
   placeholder?: string;
+  disabled?: boolean;
 }
 
 const ChatInput: React.FC<ChatInputProps> = ({
   onSend,
   onFileSubmit,
   submittedFiles = [],
-  placeholder = "Upload a file or type a message...",
+  placeholder = "How can I help you today?",
+  disabled = false,
 }) => {
   const [message, setMessage] = useState<string>("");
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
@@ -64,7 +66,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
 
   const handleFileSubmit = (file: FileItem) => {
     onFileSubmit?.(file);
-    setSelectedFile(null);
+    setSelectedFile(file);
     setIsUploaderOpen(false);
   };
 
@@ -80,7 +82,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
       onMouseDown={(e) => e.stopPropagation()}
     >
       {selectedFile && (
-        <div className="absolute -top-14 left-0 right-0 p-2 bg-zinc-900 rounded-t-md border border-zinc-800">
+        <div className="absolute -top-14 left-0 right-0 p-2 bg-zinc-900/80 rounded-t-md border border-zinc-800">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 overflow-hidden">
               <div className="rounded-md bg-primary/10 p-1.5">
@@ -116,14 +118,17 @@ const ChatInput: React.FC<ChatInputProps> = ({
       )}
 
       <div className={cn(
-        "flex items-center gap-1.5 w-full border bg-zinc-900 rounded-md px-2 py-1.5",
+        "flex items-center gap-1.5 w-full border bg-zinc-900/80 rounded-md px-2 py-1.5",
         selectedFile ? "rounded-t-none border-t-0" : "",
-        "border-zinc-800"
+        "border-zinc-800",
+        disabled ? "opacity-60" : ""
       )}>
         <Popover 
           open={isUploaderOpen} 
           onOpenChange={(open) => {
-            setIsUploaderOpen(open);
+            if (!disabled) {
+              setIsUploaderOpen(open);
+            }
           }}
         >
           <PopoverTrigger asChild>
@@ -134,10 +139,13 @@ const ChatInput: React.FC<ChatInputProps> = ({
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                setIsUploaderOpen(!isUploaderOpen);
+                if (!disabled) {
+                  setIsUploaderOpen(!isUploaderOpen);
+                }
               }}
               onMouseDown={(e) => e.stopPropagation()}
               data-radix-popover-trigger
+              disabled={disabled}
             >
               <Paperclip className="h-5 w-5" />
             </Button>
@@ -155,10 +163,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
               onFileSelect={(file) => {
                 setSelectedFile(file);
               }}
-              onSubmit={(file) => {
-                handleFileSubmit(file);
-                // Don't auto-close - let the handleFileSubmit function control this
-              }}
+              onSubmit={handleFileSubmit}
               maxSizeMB={20}
               acceptedFileTypes={["*/*"]}
               initialSelectedFile={selectedFile}
@@ -176,6 +181,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
           onMouseDown={(e) => e.stopPropagation()}
           placeholder={placeholder}
           className="flex-1 border-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-0 py-0.5 bg-transparent"
+          disabled={disabled}
         />
 
         <Button
@@ -184,6 +190,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
           className="h-8 w-8 rounded-full shrink-0 text-primary hover:text-primary/80"
           onClick={handleSend}
           onMouseDown={(e) => e.stopPropagation()}
+          disabled={disabled || (!message.trim() && !selectedFile)}
         >
           <Send className="h-5 w-5" />
         </Button>

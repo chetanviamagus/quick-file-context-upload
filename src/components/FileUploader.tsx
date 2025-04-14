@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from "react";
-import { Upload, X, File, PaperclipIcon, Trash2, CheckCircle, Send } from "lucide-react";
+import { Upload, X, File, PaperclipIcon, Trash2, CheckCircle, Send, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -42,28 +42,39 @@ const FileUploader: React.FC<FileUploaderProps> = ({
   const { toast } = useToast();
 
   useEffect(() => {
-    // Combine any mock files with previously submitted files
+    // Initialize with previously submitted files
     if (files.length === 0 && previouslySubmittedFiles.length > 0) {
       setFiles(previouslySubmittedFiles);
     } else if (files.length === 0) {
+      // Default sample files for DevOps/SRE context
       const mockFiles: FileItem[] = [
         {
           id: "1",
-          name: "document.pdf",
-          size: 2500000,
-          type: "application/pdf",
-          context: "Project proposal",
+          name: "logs.tgz",
+          size: 3500000,
+          type: "application/gzip",
+          context: "API Gateway logs from production",
           lastModified: Date.now() - 86400000,
           status: "success",
           progress: 100
         },
         {
           id: "2",
-          name: "image.jpg",
+          name: "metrics.json",
           size: 1200000,
-          type: "image/jpeg",
-          context: "Product screenshot",
+          type: "application/json",
+          context: "Kubernetes cluster metrics",
           lastModified: Date.now() - 172800000,
+          status: "success",
+          progress: 100
+        },
+        {
+          id: "3",
+          name: "diagnostics.tgz",
+          size: 5800000,
+          type: "application/gzip",
+          context: "System diagnostics from pod crash",
+          lastModified: Date.now() - 43200000,
           status: "success",
           progress: 100
         }
@@ -117,7 +128,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
         type: file.type,
         context: "",
         lastModified: file.lastModified,
-        status: "success", // Skip uploading simulation
+        status: "success", 
         progress: 100
       };
 
@@ -133,7 +144,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
 
   const handleContextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     e.preventDefault();
-    e.stopPropagation(); // Prevent event propagation
+    e.stopPropagation();
     const newContext = e.target.value;
     setContext(newContext);
     
@@ -208,12 +219,12 @@ const FileUploader: React.FC<FileUploaderProps> = ({
 
   const handleSubmit = (e: React.MouseEvent) => {
     e.preventDefault();
-    e.stopPropagation(); // Prevent event propagation
+    e.stopPropagation();
     if (selectedFile && selectedFile.status === "success") {
       if (!selectedFile.context || selectedFile.context.trim() === "") {
         toast({
           title: "Context required",
-          description: "Please add context before submitting the file.",
+          description: "Please add context about this diagnostic file to help with analysis.",
           variant: "destructive",
         });
         return;
@@ -236,26 +247,30 @@ const FileUploader: React.FC<FileUploaderProps> = ({
     >
       {files.length > 0 && (
         <div className="space-y-1">
-          <p className="text-xs font-medium">Available files</p>
+          <p className="text-xs font-medium text-zinc-400">Recent diagnostic files</p>
           <ul className="space-y-1.5 max-h-[120px] overflow-y-auto pr-1">
             {files.map((file) => (
               <li 
                 key={file.id}
                 className={cn(
                   "flex items-center justify-between p-2 rounded-md cursor-pointer hover:bg-zinc-800/50 text-sm",
-                  selectedFile?.id === file.id ? "bg-zinc-800" : "bg-zinc-900"
+                  selectedFile?.id === file.id ? "bg-zinc-800" : "bg-zinc-900/70"
                 )}
                 onClick={(e) => selectExistingFile(file, e)}
                 onMouseDown={(e) => e.stopPropagation()}
               >
                 <div className="flex items-center gap-2 overflow-hidden">
                   <div className="flex-shrink-0">
-                    <PaperclipIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                    <File className="h-3.5 w-3.5 text-muted-foreground" />
                   </div>
                   <div className="overflow-hidden">
                     <div className="flex items-center">
                       <p className="text-xs font-medium truncate max-w-[150px]">{file.name}</p>
-                      {file.context && <span className="text-xs text-zinc-500 ml-1.5">- {file.context.substring(0, 15)}{file.context.length > 15 ? '...' : ''}</span>}
+                      {file.context && (
+                        <span className="text-xs text-zinc-500 ml-1.5 truncate">
+                          - {file.context.substring(0, 15)}{file.context.length > 15 ? '...' : ''}
+                        </span>
+                      )}
                     </div>
                     <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
                   </div>
@@ -307,9 +322,9 @@ const FileUploader: React.FC<FileUploaderProps> = ({
           
           {selectedFile && (
             <div className="space-y-1 mt-2">
-              <p className="text-xs font-medium">Add context about this file</p>
+              <p className="text-xs font-medium text-zinc-400">Add context about this diagnostic file</p>
               <Textarea
-                placeholder="What's this file about?"
+                placeholder="Describe the issue (e.g., 'Kubernetes pod crash logs from API gateway')"
                 className="min-h-[60px] resize-none text-sm bg-zinc-900 border-zinc-700"
                 value={context}
                 onChange={handleContextChange}
@@ -354,9 +369,9 @@ const FileUploader: React.FC<FileUploaderProps> = ({
         
         <div className="flex flex-col items-center gap-1 text-center">
           <Upload className="h-8 w-8 text-muted-foreground mb-1" />
-          <h3 className="text-sm font-medium">Upload a file</h3>
+          <h3 className="text-sm font-medium">Upload diagnostic file</h3>
           <p className="text-xs text-muted-foreground">
-            Drag and drop or click to browse
+            Drag and drop or click to browse (.tgz, .log, .json)
           </p>
         </div>
       </div>
@@ -368,7 +383,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
           onMouseDown={(e) => e.stopPropagation()}
         >
           <Send className="h-4 w-4" />
-          Submit File with Context
+          Submit Diagnostics File
         </Button>
       )}
     </div>
