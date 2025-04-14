@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import ChatInput from "@/components/ChatInput";
@@ -11,6 +10,7 @@ import { getSubmittedFiles, submitFile } from "@/services/fileService";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
 import { FileUploadStatus } from "@/components/FileUploader";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 
 interface ChatMessage {
   id: string;
@@ -42,6 +42,8 @@ const Index = () => {
   const [diagnosticResults, setDiagnosticResults] = useState<DiagnosticResult | null>(null);
   const [isFileInfoExpanded, setIsFileInfoExpanded] = useState<boolean>(false);
   const [isFileListExpanded, setIsFileListExpanded] = useState<boolean>(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const filesPerPage = 9;
 
   useEffect(() => {
     const fetchFiles = async () => {
@@ -184,6 +186,45 @@ const Index = () => {
 
   const handleFileUploadClick = () => {
     setIsFileListExpanded(false);
+  };
+
+  const indexOfLastFile = currentPage * filesPerPage;
+  const indexOfFirstFile = indexOfLastFile - filesPerPage;
+  const currentFiles = filteredFiles.slice(indexOfFirstFile, indexOfLastFile);
+  const totalPages = Math.ceil(filteredFiles.length / filesPerPage);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+    
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= 4; i++) {
+          pages.push(i);
+        }
+        pages.push(totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1);
+        for (let i = totalPages - 3; i <= totalPages; i++) {
+          pages.push(i);
+        }
+      } else {
+        pages.push(1);
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+          pages.push(i);
+        }
+        pages.push(totalPages);
+      }
+    }
+    return pages;
   };
 
   return (
@@ -397,8 +438,8 @@ const Index = () => {
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mb-3">
-                  {filteredFiles.length > 0 ? (
-                    filteredFiles.map((file) => (
+                  {currentFiles.length > 0 ? (
+                    currentFiles.map((file) => (
                       <div 
                         key={file.id}
                         className={`flex items-center justify-between p-2 rounded-md cursor-pointer ${activeFile?.id === file.id ? 'bg-zinc-800 border border-blue-500/50' : 'bg-zinc-800/50 hover:bg-zinc-800'}`}
@@ -489,11 +530,56 @@ const Index = () => {
               placeholder={activeFile ? "Ask about the diagnostic file..." : "Upload a diagnostic file or type a message..."}
               disabled={isAnalyzing}
               onFileUploadClick={handleFileUploadClick}
-              activeFile={activeFile} // Pass the activeFile to ChatInput
+              activeFile={activeFile}
             />
           </div>
         </div>
       </div>
+
+      {filteredFiles.length > filesPerPage && (
+        <Pagination className="mb-3">
+          <PaginationContent>
+            <PaginationItem>
+              <PaginationPrevious
+                onClick={() => handlePageChange(currentPage - 1)}
+                className={cn(
+                  "cursor-pointer",
+                  currentPage === 1 && "pointer-events-none opacity-50"
+                )}
+              />
+            </PaginationItem>
+            
+            {getPageNumbers().map((page, index, array) => (
+              <React.Fragment key={page}>
+                {index > 0 && array[index - 1] + 1 !== page && (
+                  <PaginationItem>
+                    <span className="px-2">...</span>
+                  </PaginationItem>
+                )}
+                <PaginationItem>
+                  <PaginationLink
+                    onClick={() => handlePageChange(page)}
+                    isActive={currentPage === page}
+                    className="cursor-pointer"
+                  >
+                    {page}
+                  </PaginationLink>
+                </PaginationItem>
+              </React.Fragment>
+            ))}
+            
+            <PaginationItem>
+              <PaginationNext
+                onClick={() => handlePageChange(currentPage + 1)}
+                className={cn(
+                  "cursor-pointer",
+                  currentPage === totalPages && "pointer-events-none opacity-50"
+                )}
+              />
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
+      )}
     </div>
   );
 };
