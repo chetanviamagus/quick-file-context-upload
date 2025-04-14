@@ -167,8 +167,8 @@ const FileUploader: React.FC<FileUploaderProps> = ({
         className={cn(
           "border-2 border-dashed rounded-lg p-4 transition-colors cursor-pointer",
           isDragging 
-            ? "border-primary bg-primary/5" 
-            : "border-muted-foreground/20 hover:border-primary/50",
+            ? "border-primary bg-primary/10" 
+            : "border-zinc-700 hover:border-primary/50",
           "flex flex-col items-center justify-center gap-2"
         )}
         onClick={() => fileInputRef.current?.click()}
@@ -199,7 +199,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
           <p className="text-xs font-medium">Add context about this file (optional)</p>
           <Textarea
             placeholder="What's this file about?"
-            className="min-h-[60px] resize-none text-sm"
+            className="min-h-[60px] resize-none text-sm bg-zinc-900 border-zinc-700"
             value={context}
             onChange={handleContextChange}
           />
@@ -208,7 +208,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
 
       {/* Selected file info */}
       {selectedFile && (
-        <div className="border rounded-lg p-3 bg-accent/50">
+        <div className="border rounded-lg p-3 bg-zinc-900/50 border-zinc-800">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2">
               <File className="h-7 w-7 text-primary" />
@@ -247,8 +247,8 @@ const FileUploader: React.FC<FileUploaderProps> = ({
               <li 
                 key={file.id}
                 className={cn(
-                  "flex items-center justify-between p-2 rounded-md cursor-pointer hover:bg-accent/50 text-sm",
-                  selectedFile?.id === file.id ? "bg-accent" : "bg-background"
+                  "flex items-center justify-between p-2 rounded-md cursor-pointer hover:bg-zinc-800/50 text-sm",
+                  selectedFile?.id === file.id ? "bg-zinc-800" : "bg-zinc-900"
                 )}
                 onClick={() => selectExistingFile(file)}
               >

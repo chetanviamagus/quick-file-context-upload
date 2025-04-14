@@ -55,7 +55,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
   return (
     <div className="relative w-full">
       {selectedFile && (
-        <div className="absolute -top-14 left-0 right-0 p-2 bg-accent rounded-t-md border border-border">
+        <div className="absolute -top-14 left-0 right-0 p-2 bg-zinc-900 rounded-t-md border border-zinc-800">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 overflow-hidden">
               <div className="rounded-md bg-primary/10 p-1.5">
@@ -81,8 +81,9 @@ const ChatInput: React.FC<ChatInputProps> = ({
       )}
 
       <div className={cn(
-        "flex items-center gap-1.5 w-full border bg-background rounded-md px-2 py-1.5",
-        selectedFile ? "rounded-t-none border-t-0" : ""
+        "flex items-center gap-1.5 w-full border bg-zinc-900 rounded-md px-2 py-1.5",
+        selectedFile ? "rounded-t-none border-t-0" : "",
+        "border-zinc-800"
       )}>
         <Popover open={isUploaderOpen} onOpenChange={setIsUploaderOpen}>
           <PopoverTrigger asChild>
@@ -95,7 +96,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
             </Button>
           </PopoverTrigger>
           <PopoverContent 
-            className="w-[350px] p-3" 
+            className="w-[350px] p-3 bg-zinc-950 border-zinc-800" 
             side="top" 
             align="start"
             sideOffset={5}
@@ -117,7 +118,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className="flex-1 border-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-0 py-0.5"
+          className="flex-1 border-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-0 py-0.5 bg-transparent"
         />
 
         <Button
