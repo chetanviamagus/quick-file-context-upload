@@ -52,17 +52,6 @@ const ChatInput: React.FC<ChatInputProps> = ({
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  const getUploadStatusIndicator = (file: FileItem) => {
-    if (file.status === "uploading") {
-      return <span className="text-xs text-blue-400 ml-1">({file.progress}%)</span>;
-    } else if (file.status === "success") {
-      return <span className="text-xs text-green-400 ml-1">(Uploaded)</span>;
-    } else if (file.status === "error") {
-      return <span className="text-xs text-red-400 ml-1">(Failed)</span>;
-    }
-    return null;
-  };
-
   return (
     <div className="relative w-full">
       {selectedFile && (
@@ -75,7 +64,9 @@ const ChatInput: React.FC<ChatInputProps> = ({
               <div className="overflow-hidden">
                 <div className="flex items-center">
                   <p className="text-sm font-medium truncate">{selectedFile.name}</p>
-                  {getUploadStatusIndicator(selectedFile)}
+                  {selectedFile.status === "success" && (
+                    <span className="text-xs text-green-400 ml-1.5">✓</span>
+                  )}
                 </div>
                 <p className="text-xs text-muted-foreground">
                   {formatFileSize(selectedFile.size)}

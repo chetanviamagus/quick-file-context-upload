@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from "react";
-import { Upload, X, File, PaperclipIcon, Trash2, CheckCircle, AlertCircle, Loader } from "lucide-react";
+import { Upload, X, File, PaperclipIcon, Trash2, CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -36,7 +36,6 @@ const FileUploader: React.FC<FileUploaderProps> = ({
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(initialSelectedFile);
   const [context, setContext] = useState<string>(initialSelectedFile?.context || "");
   const [isDragging, setIsDragging] = useState<boolean>(false);
-  const [showContextInput, setShowContextInput] = useState<boolean>(!!initialSelectedFile);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -75,7 +74,6 @@ const FileUploader: React.FC<FileUploaderProps> = ({
     if (initialSelectedFile) {
       setSelectedFile(initialSelectedFile);
       setContext(initialSelectedFile.context || "");
-      setShowContextInput(true);
     }
   }, [initialSelectedFile]);
 
@@ -125,7 +123,6 @@ const FileUploader: React.FC<FileUploaderProps> = ({
       setFiles(prev => [...prev, newFile]);
       setSelectedFile(newFile);
       setContext("");
-      setShowContextInput(false);
       
       // Simulate file upload progress
       simulateUpload(newFile);
@@ -159,7 +156,6 @@ const FileUploader: React.FC<FileUploaderProps> = ({
               ? { ...prev, status: "success" as const, progress: 100 } 
               : prev
           );
-          setShowContextInput(true);
         }
 
         toast({
@@ -205,7 +201,6 @@ const FileUploader: React.FC<FileUploaderProps> = ({
   const selectExistingFile = (file: FileItem) => {
     setSelectedFile(file);
     setContext(file.context || "");
-    setShowContextInput(file.status === "success");
     onFileSelect?.(file);
   };
 
@@ -216,7 +211,6 @@ const FileUploader: React.FC<FileUploaderProps> = ({
     if (selectedFile && selectedFile.id === id) {
       setSelectedFile(null);
       setContext("");
-      setShowContextInput(false);
       onFileSelect?.(null);
     }
     
@@ -259,24 +253,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  const handleSelect = () => {
-    if (selectedFile) {
-      onFileSelect?.(selectedFile);
-    }
-  };
-
-  const getStatusIcon = (file: FileItem) => {
-    if (!file.status || file.status === "uploading") {
-      return <Loader className="h-3.5 w-3.5 text-blue-400 animate-spin" />;
-    } else if (file.status === "success") {
-      return <CheckCircle className="h-3.5 w-3.5 text-green-400" />;
-    } else if (file.status === "error") {
-      return <AlertCircle className="h-3.5 w-3.5 text-red-400" />;
-    }
-    return null;
-  };
-
-  // Show the list of files first for better UX
+  // Show available files first for better UX
   return (
     <div className="w-full space-y-3">
       {/* Recent files section - now displayed at the top for immediate visibility */}
@@ -294,9 +271,8 @@ const FileUploader: React.FC<FileUploaderProps> = ({
                 onClick={() => selectExistingFile(file)}
               >
                 <div className="flex items-center gap-2 overflow-hidden">
-                  <div className="flex items-center gap-1">
-                    <PaperclipIcon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                    {getStatusIcon(file)}
+                  <div className="flex-shrink-0">
+                    <PaperclipIcon className="h-3.5 w-3.5 text-muted-foreground" />
                   </div>
                   <div className="overflow-hidden">
                     <div className="flex items-center">
@@ -320,16 +296,16 @@ const FileUploader: React.FC<FileUploaderProps> = ({
         </div>
       )}
 
-      {/* Selected file info with progress and status */}
+      {/* Selected file info with simplified status display */}
       {selectedFile && (
-        <div className="border rounded-lg p-3 bg-zinc-900/50 border-zinc-800">
+        <div className="border rounded-lg p-3 bg-zinc-900/50 border-zinc-800 space-y-2">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2">
               <File className="h-7 w-7 text-primary" />
               <div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1">
                   <p className="font-medium text-sm truncate max-w-[160px]">{selectedFile.name}</p>
-                  {getStatusIcon(selectedFile)}
+                  {selectedFile.status === "success" && <CheckCircle className="h-3.5 w-3.5 text-green-400" />}
                 </div>
                 <p className="text-xs text-muted-foreground">{formatFileSize(selectedFile.size)}</p>
               </div>
@@ -342,7 +318,6 @@ const FileUploader: React.FC<FileUploaderProps> = ({
                 e.stopPropagation();
                 setSelectedFile(null);
                 setContext("");
-                setShowContextInput(false);
                 onFileSelect?.(null);
               }}
             >
@@ -350,32 +325,29 @@ const FileUploader: React.FC<FileUploaderProps> = ({
             </Button>
           </div>
           
-          {/* Progress bar for uploading files */}
+          {/* Simplified progress bar for uploading files */}
           {selectedFile.status === "uploading" && (
-            <div className="mt-2">
+            <div className="mt-1">
               <Progress value={selectedFile.progress} className="h-1.5" />
-              <p className="text-xs text-muted-foreground mt-1">
-                Uploading: {selectedFile.progress}%
-              </p>
+            </div>
+          )}
+
+          {/* Context textarea - Always show when a file is selected */}
+          {selectedFile && (
+            <div className="space-y-1 mt-2">
+              <p className="text-xs font-medium">Add context about this file</p>
+              <Textarea
+                placeholder="What's this file about?"
+                className="min-h-[60px] resize-none text-sm bg-zinc-900 border-zinc-700"
+                value={context}
+                onChange={handleContextChange}
+              />
             </div>
           )}
         </div>
       )}
 
-      {/* Context textarea - Always show when a file is successfully uploaded */}
-      {selectedFile && showContextInput && (
-        <div className="space-y-1">
-          <p className="text-xs font-medium">Add context about this file</p>
-          <Textarea
-            placeholder="What's this file about?"
-            className="min-h-[60px] resize-none text-sm bg-zinc-900 border-zinc-700"
-            value={context}
-            onChange={handleContextChange}
-          />
-        </div>
-      )}
-
-      {/* File uploader area - at the bottom now */}
+      {/* File uploader area */}
       <div
         className={cn(
           "border-2 border-dashed rounded-lg p-4 transition-colors cursor-pointer",
@@ -411,7 +383,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
         <Button 
           className="w-full text-sm py-1.5 h-8" 
           size="sm"
-          onClick={handleSelect}
+          onClick={() => onFileSelect?.(selectedFile)}
         >
           Use this file
         </Button>
