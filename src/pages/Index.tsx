@@ -38,7 +38,6 @@ const Index = () => {
   const [activeFile, setActiveFile] = useState<FileItem | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState<boolean>(false);
   const [diagnosticResults, setDiagnosticResults] = useState<DiagnosticResult | null>(null);
-  const [isFileInfoExpanded, setIsFileInfoExpanded] = useState<boolean>(false);
   const [isFileListExpanded, setIsFileListExpanded] = useState<boolean>(true);
 
   useEffect(() => {
@@ -242,7 +241,7 @@ const Index = () => {
 
             {diagnosticResults && (
               <div className="mt-6 space-y-6 mb-4">
-                <div className="bg-zinc-900/80 border border-zinc-800 rounded-lg overflow-hidden">
+                <div className="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden">
                   <div className="p-4">
                     <h3 className="text-lg font-bold">Summary</h3>
                     <p className="text-sm mt-2 text-zinc-300">{diagnosticResults.summary}</p>
@@ -419,39 +418,6 @@ const Index = () => {
                 </div>
               </CollapsibleContent>
             </Collapsible>
-            
-            {activeFile && (
-              <Collapsible 
-                open={isFileInfoExpanded}
-                onOpenChange={setIsFileInfoExpanded}
-                className="mb-3"
-              >
-                <CollapsibleTrigger asChild>
-                  <div className="flex items-center justify-between rounded-md bg-zinc-800/50 px-3 py-2 cursor-pointer hover:bg-zinc-800">
-                    <div className="flex items-center gap-2">
-                      <File className="h-4 w-4 text-blue-400" />
-                      <span className="text-sm font-medium">
-                        File: {activeFile.name}
-                      </span>
-                      <span className="text-xs bg-green-500/20 text-green-400 px-2 py-0.5 rounded">
-                        Ready
-                      </span>
-                    </div>
-                    <ChevronDown className={`h-4 w-4 transition-transform ${isFileInfoExpanded ? 'transform rotate-180' : ''}`} />
-                  </div>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="p-3 text-sm bg-zinc-800/20 rounded-b-md border-x border-b border-zinc-800">
-                  <div className="space-y-2">
-                    <p><span className="text-zinc-400">Type:</span> {activeFile.type}</p>
-                    <p><span className="text-zinc-400">Size:</span> {activeFile.size > 1024 * 1024 
-                      ? `${(activeFile.size / (1024 * 1024)).toFixed(2)} MB` 
-                      : `${(activeFile.size / 1024).toFixed(2)} KB`}
-                    </p>
-                    <p><span className="text-zinc-400">Context:</span> {activeFile.context}</p>
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-            )}
             
             <ChatInput 
               onSend={handleSendMessage}
