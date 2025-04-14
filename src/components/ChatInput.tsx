@@ -10,11 +10,15 @@ import FileUploader, { FileItem } from "./FileUploader";
 
 interface ChatInputProps {
   onSend?: (message: string, file?: FileItem | null) => void;
+  onFileSubmit?: (file: FileItem) => void;
+  submittedFiles?: FileItem[];
   placeholder?: string;
 }
 
 const ChatInput: React.FC<ChatInputProps> = ({
   onSend,
+  onFileSubmit,
+  submittedFiles = [],
   placeholder = "Upload a file or type a message...",
 }) => {
   const [message, setMessage] = useState<string>("");
@@ -53,13 +57,9 @@ const ChatInput: React.FC<ChatInputProps> = ({
   };
 
   const handleFileSubmit = (file: FileItem) => {
-    onSend?.("", file);
+    onFileSubmit?.(file);
     setSelectedFile(null);
     setIsUploaderOpen(false);
-    toast({
-      title: "File submitted",
-      description: `${file.name} has been submitted with context: ${file.context}`,
-    });
   };
 
   return (
@@ -128,6 +128,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
               maxSizeMB={20}
               acceptedFileTypes={["*/*"]}
               initialSelectedFile={selectedFile}
+              previouslySubmittedFiles={submittedFiles}
             />
           </PopoverContent>
         </Popover>

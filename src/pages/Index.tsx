@@ -6,10 +6,23 @@ import { FileItem } from "@/components/FileUploader";
 import { Moon, Sun } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/components/ThemeProvider";
+import { useEffect, useState } from "react";
+import { getSubmittedFiles, submitFile } from "@/services/fileService";
 
 const Index = () => {
   const { toast } = useToast();
   const { theme, setTheme } = useTheme();
+  const [submittedFiles, setSubmittedFiles] = useState<FileItem[]>([]);
+
+  useEffect(() => {
+    // Fetch previously submitted files when component mounts
+    const fetchFiles = async () => {
+      const files = await getSubmittedFiles();
+      setSubmittedFiles(files);
+    };
+    
+    fetchFiles();
+  }, []);
 
   const handleSendMessage = (message: string, file: FileItem | null) => {
     console.log("Message:", message);
@@ -24,6 +37,24 @@ const Index = () => {
       toast({
         title: "Message Sent",
         description: `Sent: ${message}`,
+      });
+    }
+  };
+
+  const handleFileSubmit = async (file: FileItem) => {
+    try {
+      const submittedFile = await submitFile(file);
+      setSubmittedFiles(prev => [submittedFile, ...prev]);
+      
+      toast({
+        title: "File saved successfully",
+        description: `File "${file.name}" has been saved with context.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error saving file",
+        description: "There was an error saving your file. Please try again.",
+        variant: "destructive",
       });
     }
   };
@@ -63,6 +94,8 @@ const Index = () => {
           
           <ChatInput 
             onSend={handleSendMessage}
+            onFileSubmit={handleFileSubmit}
+            submittedFiles={submittedFiles}
             placeholder="Upload a file or type a message..."
           />
         </CardContent>
