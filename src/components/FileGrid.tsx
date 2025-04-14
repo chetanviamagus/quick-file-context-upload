@@ -42,7 +42,6 @@ export const FileGrid: React.FC<FileGridProps> = ({
   // Reset when search query changes
   useEffect(() => {
     reset();
-    setInitialLoadComplete(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchQuery, selectedFileTypes]);
   
@@ -167,11 +166,6 @@ export const FileGrid: React.FC<FileGridProps> = ({
     }
   };
   
-  // Determine the minimum height for the grid container to prevent layout shift
-  const gridContainerClass = initialLoadComplete 
-    ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3" 
-    : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 min-h-[200px]";
-  
   return (
     <div className={cn("space-y-3", className)}>
       {fileTypes.length > 0 && (
@@ -194,7 +188,7 @@ export const FileGrid: React.FC<FileGridProps> = ({
         </ScrollArea>
       )}
       
-      <div className={gridContainerClass}>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
         {files.length > 0 ? (
           files.map((file) => (
             <div 
@@ -257,25 +251,21 @@ export const FileGrid: React.FC<FileGridProps> = ({
               </div>
             </div>
           ))
+        ) : !initialLoadComplete || isLoading ? (
+          <div className="col-span-full flex justify-center py-6">
+            <div className="flex items-center gap-2">
+              <Loader className="h-4 w-4 animate-spin text-zinc-400" />
+              <span className="text-sm text-zinc-400">Loading files...</span>
+            </div>
+          </div>
         ) : (
-          <div className="col-span-full">
-            {!initialLoadComplete || isLoading ? (
-              <div className="flex justify-center py-6">
-                <div className="flex items-center gap-2">
-                  <Loader className="h-4 w-4 animate-spin text-zinc-400" />
-                  <span className="text-sm text-zinc-400">Loading files...</span>
-                </div>
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <p className="text-sm text-zinc-500">
-                  {searchQuery ? `No files matching "${searchQuery}"` : "No files found"}
-                </p>
-                <p className="text-xs text-zinc-600 mt-1">
-                  {searchQuery ? "Try a different search term" : "Upload a file to get started"}
-                </p>
-              </div>
-            )}
+          <div className="col-span-full text-center py-8">
+            <p className="text-sm text-zinc-500">
+              {searchQuery ? `No files matching "${searchQuery}"` : "No files found"}
+            </p>
+            <p className="text-xs text-zinc-600 mt-1">
+              {searchQuery ? "Try a different search term" : "Upload a file to get started"}
+            </p>
           </div>
         )}
       </div>
@@ -285,7 +275,6 @@ export const FileGrid: React.FC<FileGridProps> = ({
         <div
           ref={loaderRef}
           className="flex justify-center py-4"
-          style={{ height: '60px' }}
         >
           {isLoading && (
             <div className="flex items-center gap-2">
