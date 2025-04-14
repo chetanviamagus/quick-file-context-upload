@@ -28,6 +28,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
   const { toast } = useToast();
 
   const handleSend = (e?: React.MouseEvent) => {
+    e?.preventDefault();
     e?.stopPropagation();
     
     if ((!message.trim() && !selectedFile) || (message.trim().length === 0 && !selectedFile)) {
@@ -79,6 +80,11 @@ const ChatInput: React.FC<ChatInputProps> = ({
     e.stopPropagation();
   };
 
+  const handlePopoverOpenChange = (open: boolean) => {
+    // Use this function to control when the popover opens/closes
+    setIsUploaderOpen(open);
+  };
+
   return (
     <div className="relative w-full" onMouseDown={handleMouseDown} onClick={handleClick}>
       {selectedFile && (
@@ -106,6 +112,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
               size="icon"
               className="h-6 w-6 rounded-full"
               onClick={(e) => {
+                e.preventDefault();
                 e.stopPropagation();
                 setSelectedFile(null);
               }}
@@ -123,16 +130,17 @@ const ChatInput: React.FC<ChatInputProps> = ({
       )}>
         <Popover 
           open={isUploaderOpen} 
-          onOpenChange={(open) => {
-            setIsUploaderOpen(open);
-          }}
+          onOpenChange={handlePopoverOpenChange}
         >
           <PopoverTrigger asChild>
             <Button
               variant="ghost"
               size="icon"
               className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
               onMouseDown={(e) => e.stopPropagation()}
             >
               <Paperclip className="h-5 w-5" />
@@ -145,15 +153,20 @@ const ChatInput: React.FC<ChatInputProps> = ({
             sideOffset={5}
             onMouseDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
           >
             <FileUploader
               onFileSelect={(file) => {
                 setSelectedFile(file);
                 if (file && file.status === "success") {
-                  setIsUploaderOpen(false);
+                  // Don't auto-close - let user add context
+                  // setIsUploaderOpen(false);
                 }
               }}
-              onSubmit={handleFileSubmit}
+              onSubmit={(file) => {
+                handleFileSubmit(file);
+                setIsUploaderOpen(false);
+              }}
               maxSizeMB={20}
               acceptedFileTypes={["*/*"]}
               initialSelectedFile={selectedFile}

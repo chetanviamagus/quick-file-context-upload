@@ -80,6 +80,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
   }, [initialSelectedFile]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    event.stopPropagation();
     const fileList = event.target.files;
     if (fileList && fileList.length > 0) {
       const file = fileList[0];
@@ -130,6 +131,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
   };
 
   const handleContextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    e.preventDefault();
     e.stopPropagation(); // Prevent event propagation
     const newContext = e.target.value;
     setContext(newContext);
@@ -143,13 +145,16 @@ const FileUploader: React.FC<FileUploaderProps> = ({
     }
   };
 
-  const selectExistingFile = (file: FileItem) => {
+  const selectExistingFile = (file: FileItem, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     setSelectedFile(file);
     setContext(file.context || "");
     onFileSelect?.(file);
   };
 
   const removeFile = (id: string, e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
     setFiles(prev => prev.filter(file => file.id !== id));
     
@@ -167,16 +172,19 @@ const FileUploader: React.FC<FileUploaderProps> = ({
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
+    e.stopPropagation();
     setIsDragging(true);
   };
 
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
+    e.stopPropagation();
     setIsDragging(false);
   };
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
+    e.stopPropagation();
     setIsDragging(false);
     
     const droppedFiles = e.dataTransfer.files;
@@ -198,6 +206,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
   };
 
   const handleSubmit = (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation(); // Prevent event propagation
     if (selectedFile && selectedFile.status === "success") {
       if (!selectedFile.context || selectedFile.context.trim() === "") {
@@ -219,15 +228,22 @@ const FileUploader: React.FC<FileUploaderProps> = ({
 
   // Add event handlers to prevent dialog closing                                 
   const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
   };
 
   const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
     e.stopPropagation();
   };
 
   return (
-    <div className="w-full space-y-3" onMouseDown={handleMouseDown} onClick={handleClick}>
+    <div 
+      className="w-full space-y-3" 
+      onMouseDown={handleMouseDown} 
+      onClick={handleClick}
+      onKeyDown={(e) => e.stopPropagation()}
+    >
       {files.length > 0 && (
         <div className="space-y-1">
           <p className="text-xs font-medium">Available files</p>
@@ -239,10 +255,8 @@ const FileUploader: React.FC<FileUploaderProps> = ({
                   "flex items-center justify-between p-2 rounded-md cursor-pointer hover:bg-zinc-800/50 text-sm",
                   selectedFile?.id === file.id ? "bg-zinc-800" : "bg-zinc-900"
                 )}
-                onClick={(e) => {
-                  e.stopPropagation(); // Prevent event propagation
-                  selectExistingFile(file);
-                }}
+                onClick={(e) => selectExistingFile(file, e)}
+                onMouseDown={(e) => e.stopPropagation()}
               >
                 <div className="flex items-center gap-2 overflow-hidden">
                   <div className="flex-shrink-0">
@@ -261,6 +275,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
                   size="icon"
                   className="h-6 w-6 opacity-70 hover:opacity-100 rounded-full"
                   onClick={(e) => removeFile(file.id, e)}
+                  onMouseDown={(e) => e.stopPropagation()}
                 >
                   <Trash2 className="h-3 w-3 text-destructive" />
                 </Button>
@@ -288,11 +303,13 @@ const FileUploader: React.FC<FileUploaderProps> = ({
               size="icon" 
               className="h-7 w-7 rounded-full"
               onClick={(e) => {
+                e.preventDefault();
                 e.stopPropagation();
                 setSelectedFile(null);
                 setContext("");
                 onFileSelect?.(null);
               }}
+              onMouseDown={(e) => e.stopPropagation()}
             >
               <X className="h-3.5 w-3.5" />
             </Button>
@@ -308,6 +325,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
                 onChange={handleContextChange}
                 onClick={(e) => e.stopPropagation()}
                 onMouseDown={(e) => e.stopPropagation()}
+                onKeyDown={(e) => e.stopPropagation()}
               />
             </div>
           )}
@@ -323,6 +341,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
           "flex flex-col items-center justify-center gap-2"
         )}
         onClick={(e) => {
+          e.preventDefault();
           e.stopPropagation();
           fileInputRef.current?.click();
         }}
@@ -337,6 +356,8 @@ const FileUploader: React.FC<FileUploaderProps> = ({
           onChange={handleFileChange}
           className="hidden"
           accept={acceptedFileTypes.join(",")}
+          onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
         />
         
         <div className="flex flex-col items-center gap-1 text-center">

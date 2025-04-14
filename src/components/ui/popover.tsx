@@ -22,6 +22,9 @@ const PopoverContent = React.forwardRef<
         className
       )}
       onOpenAutoFocus={(e) => e.preventDefault()}
+      onClick={(e) => e.stopPropagation()}
+      onMouseDown={(e) => e.stopPropagation()}
+      onKeyDown={(e) => e.stopPropagation()}
       {...props}
     />
   </PopoverPrimitive.Portal>
