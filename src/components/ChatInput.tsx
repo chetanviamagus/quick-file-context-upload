@@ -17,6 +17,7 @@ interface ChatInputProps {
   onFileUploadClick?: () => void;
   isDemo?: boolean; // For presentation mode
   activeFile?: FileItem | null; // Add activeFile prop
+  collapseFileList?: () => void; // Add new prop to collapse file list
 }
 
 const ChatInput: React.FC<ChatInputProps> = ({
@@ -28,6 +29,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
   onFileUploadClick,
   isDemo = false,
   activeFile = null, // Default to null
+  collapseFileList,
 }) => {
   const [message, setMessage] = useState<string>("");
   const [selectedFile, setSelectedFile] = useState<FileItem | null>(null);
@@ -93,8 +95,14 @@ const ChatInput: React.FC<ChatInputProps> = ({
     e.stopPropagation();
     
     if (!disabled) {
+      // If we're opening the uploader, call the onFileUploadClick callback
+      if (!isUploaderOpen) {
+        onFileUploadClick?.();
+      } else {
+        // If we're closing the uploader, collapse the file list
+        collapseFileList?.();
+      }
       setIsUploaderOpen(!isUploaderOpen);
-      onFileUploadClick?.();
     }
   };
 
@@ -148,6 +156,10 @@ const ChatInput: React.FC<ChatInputProps> = ({
           onOpenChange={(open) => {
             if (!disabled) {
               setIsUploaderOpen(open);
+              // If we're closing the uploader, collapse the file list
+              if (!open) {
+                collapseFileList?.();
+              }
             }
           }}
         >

@@ -200,6 +200,11 @@ const Index = () => {
     setIsFileListExpanded(true);
   };
 
+  // New function to collapse the file list
+  const collapseFileList = () => {
+    setIsFileListExpanded(false);
+  };
+
   const handleRefreshFiles = async () => {
     try {
       toast({
@@ -516,6 +521,7 @@ const Index = () => {
               disabled={isAnalyzing}
               onFileUploadClick={handleFileUploadClick}
               activeFile={activeFile}
+              collapseFileList={collapseFileList}
             />
           </div>
         </div>
