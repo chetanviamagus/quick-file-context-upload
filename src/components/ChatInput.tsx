@@ -95,14 +95,18 @@ const ChatInput: React.FC<ChatInputProps> = ({
     e.stopPropagation();
     
     if (!disabled) {
-      // If we're opening the uploader, call the onFileUploadClick callback
-      if (!isUploaderOpen) {
+      // Toggle the uploader state
+      const newUploaderState = !isUploaderOpen;
+      setIsUploaderOpen(newUploaderState);
+      
+      // If we're opening the uploader, call the onFileUploadClick callback to expand the file list
+      if (newUploaderState) {
         onFileUploadClick?.();
-      } else {
-        // If we're closing the uploader, collapse the file list
+      } 
+      // If we're closing the uploader, collapse the file list
+      else {
         collapseFileList?.();
       }
-      setIsUploaderOpen(!isUploaderOpen);
     }
   };
 
@@ -156,7 +160,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
           onOpenChange={(open) => {
             if (!disabled) {
               setIsUploaderOpen(open);
-              // If we're closing the uploader, collapse the file list
+              // Always collapse file list when the popover is closed
               if (!open) {
                 collapseFileList?.();
               }
