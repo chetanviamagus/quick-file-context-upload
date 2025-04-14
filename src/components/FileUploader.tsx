@@ -130,6 +130,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
   };
 
   const handleContextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    e.stopPropagation(); // Prevent event propagation
     const newContext = e.target.value;
     setContext(newContext);
     
@@ -196,7 +197,8 @@ const FileUploader: React.FC<FileUploaderProps> = ({
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent event propagation
     if (selectedFile && selectedFile.status === "success") {
       if (!selectedFile.context || selectedFile.context.trim() === "") {
         toast({
@@ -215,8 +217,17 @@ const FileUploader: React.FC<FileUploaderProps> = ({
                                    selectedFile.status === "success" && 
                                    context.trim() !== "";
 
+  // Add event handlers to prevent dialog closing                                 
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
   return (
-    <div className="w-full space-y-3">
+    <div className="w-full space-y-3" onMouseDown={handleMouseDown} onClick={handleClick}>
       {files.length > 0 && (
         <div className="space-y-1">
           <p className="text-xs font-medium">Available files</p>
@@ -228,7 +239,10 @@ const FileUploader: React.FC<FileUploaderProps> = ({
                   "flex items-center justify-between p-2 rounded-md cursor-pointer hover:bg-zinc-800/50 text-sm",
                   selectedFile?.id === file.id ? "bg-zinc-800" : "bg-zinc-900"
                 )}
-                onClick={() => selectExistingFile(file)}
+                onClick={(e) => {
+                  e.stopPropagation(); // Prevent event propagation
+                  selectExistingFile(file);
+                }}
               >
                 <div className="flex items-center gap-2 overflow-hidden">
                   <div className="flex-shrink-0">
@@ -292,6 +306,8 @@ const FileUploader: React.FC<FileUploaderProps> = ({
                 className="min-h-[60px] resize-none text-sm bg-zinc-900 border-zinc-700"
                 value={context}
                 onChange={handleContextChange}
+                onClick={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
               />
             </div>
           )}
@@ -306,7 +322,11 @@ const FileUploader: React.FC<FileUploaderProps> = ({
             : "border-zinc-700 hover:border-primary/50",
           "flex flex-col items-center justify-center gap-2"
         )}
-        onClick={() => fileInputRef.current?.click()}
+        onClick={(e) => {
+          e.stopPropagation();
+          fileInputRef.current?.click();
+        }}
+        onMouseDown={(e) => e.stopPropagation()}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
@@ -332,6 +352,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
         <Button 
           className="w-full gap-2 py-2"
           onClick={handleSubmit}
+          onMouseDown={(e) => e.stopPropagation()}
         >
           <Send className="h-4 w-4" />
           Submit File with Context

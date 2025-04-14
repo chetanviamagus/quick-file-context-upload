@@ -27,7 +27,9 @@ const ChatInput: React.FC<ChatInputProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  const handleSend = () => {
+  const handleSend = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    
     if ((!message.trim() && !selectedFile) || (message.trim().length === 0 && !selectedFile)) {
       toast({
         title: "Nothing to send",
@@ -44,6 +46,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    e.stopPropagation();
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -62,8 +65,22 @@ const ChatInput: React.FC<ChatInputProps> = ({
     setIsUploaderOpen(false);
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation();
+    setMessage(e.target.value);
+  };
+
+  // Prevent events from bubbling up to parent elements
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+  };
+
   return (
-    <div className="relative w-full">
+    <div className="relative w-full" onMouseDown={handleMouseDown} onClick={handleClick}>
       {selectedFile && (
         <div className="absolute -top-14 left-0 right-0 p-2 bg-zinc-900 rounded-t-md border border-zinc-800">
           <div className="flex items-center justify-between gap-2">
@@ -88,7 +105,10 @@ const ChatInput: React.FC<ChatInputProps> = ({
               variant="ghost"
               size="icon"
               className="h-6 w-6 rounded-full"
-              onClick={() => setSelectedFile(null)}
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedFile(null);
+              }}
             >
               <X className="h-3.5 w-3.5" />
             </Button>
@@ -101,12 +121,19 @@ const ChatInput: React.FC<ChatInputProps> = ({
         selectedFile ? "rounded-t-none border-t-0" : "",
         "border-zinc-800"
       )}>
-        <Popover open={isUploaderOpen} onOpenChange={setIsUploaderOpen}>
+        <Popover 
+          open={isUploaderOpen} 
+          onOpenChange={(open) => {
+            setIsUploaderOpen(open);
+          }}
+        >
           <PopoverTrigger asChild>
             <Button
               variant="ghost"
               size="icon"
               className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
+              onClick={(e) => e.stopPropagation()}
+              onMouseDown={(e) => e.stopPropagation()}
             >
               <Paperclip className="h-5 w-5" />
             </Button>
@@ -116,6 +143,8 @@ const ChatInput: React.FC<ChatInputProps> = ({
             side="top" 
             align="start"
             sideOffset={5}
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
           >
             <FileUploader
               onFileSelect={(file) => {
@@ -136,8 +165,10 @@ const ChatInput: React.FC<ChatInputProps> = ({
         <Input
           ref={inputRef}
           value={message}
-          onChange={(e) => setMessage(e.target.value)}
+          onChange={handleInputChange}
           onKeyDown={handleKeyDown}
+          onClick={(e) => e.stopPropagation()}
+          onMouseDown={(e) => e.stopPropagation()}
           placeholder={placeholder}
           className="flex-1 border-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-0 py-0.5 bg-transparent"
         />
@@ -147,6 +178,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
           size="icon"
           className="h-8 w-8 rounded-full shrink-0 text-primary hover:text-primary/80"
           onClick={handleSend}
+          onMouseDown={(e) => e.stopPropagation()}
         >
           <Send className="h-5 w-5" />
         </Button>
