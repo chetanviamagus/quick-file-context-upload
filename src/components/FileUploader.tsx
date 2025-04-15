@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { Upload, X, File as FileIcon, Send, Loader2, CheckCircle2, AlertCircle, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -51,6 +50,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const [demoStatus, setDemoStatus] = useState<FileUploadStatus>(FileUploadStatus.FILE_UPLOAD_STATUS_UNSPECIFIED);
   const [demoProgress, setDemoProgress] = useState<number>(0);
+  const [contextError, setContextError] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -139,11 +139,11 @@ const FileUploader: React.FC<FileUploaderProps> = ({
     e.stopPropagation();
     const newContext = e.target.value;
     setContext(newContext);
+    setContextError(newContext.trim() ? "" : "Context is required");
     
     if (selectedFile) {
       const updatedFile = { ...selectedFile, context: newContext };
       setSelectedFile(updatedFile);
-      
       onFileSelect?.(updatedFile);
     }
   };
@@ -184,15 +184,25 @@ const FileUploader: React.FC<FileUploaderProps> = ({
   };
 
   const handleSubmitFile = () => {
-    if (selectedFile) {
-      if (isDemo) {
-        toast({
-          title: "File submitted",
-          description: `"${selectedFile.name}" is being processed.`,
-        });
-      } else {
-        onSubmit?.(selectedFile);
-      }
+    if (!selectedFile) return;
+    
+    if (!context.trim()) {
+      setContextError("Context is required");
+      toast({
+        title: "Validation Error",
+        description: "Please provide context about the diagnostic file.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (isDemo) {
+      toast({
+        title: "File submitted",
+        description: `"${selectedFile.name}" is being processed.`,
+      });
+    } else {
+      onSubmit?.(selectedFile);
     }
   };
 
@@ -292,7 +302,8 @@ const FileUploader: React.FC<FileUploaderProps> = ({
           isDemo && demoStatus === FileUploadStatus.FILE_UPLOAD_STATUS_COMPLETE && "border-green-800/50",
           isDemo && demoStatus === FileUploadStatus.FILE_UPLOAD_STATUS_FAILED && "border-red-800/50",
           isDemo && demoStatus === FileUploadStatus.FILE_UPLOAD_STATUS_IN_PROGRESS && "border-amber-800/50",
-          isDemo && demoStatus === FileUploadStatus.FILE_UPLOAD_STATUS_UNSPECIFIED && "border-zinc-800"
+          isDemo && demoStatus === FileUploadStatus.FILE_UPLOAD_STATUS_UNSPECIFIED && "border-zinc-800",
+          contextError && "border-red-800/50"
         )}>
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2">
@@ -339,15 +350,26 @@ const FileUploader: React.FC<FileUploaderProps> = ({
           
           {selectedFile && (
             <div className="space-y-1 mt-2">
-              <p className="text-xs font-medium text-zinc-400">Add context about this diagnostic file</p>
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-medium text-zinc-400">Add context about this diagnostic file <span className="text-red-400">*</span></p>
+                {contextError && <p className="text-xs text-red-400">{contextError}</p>}
+              </div>
               <Textarea
                 placeholder="Describe the issue (e.g., 'Kubernetes pod crash logs from API gateway')"
-                className="min-h-[60px] resize-none text-sm bg-zinc-900 border-zinc-700"
+                className={cn(
+                  "min-h-[60px] resize-none text-sm bg-zinc-900 border-zinc-700",
+                  contextError && "border-red-400/50 focus-visible:ring-red-400/20"
+                )}
                 value={context}
                 onChange={handleContextChange}
                 onClick={(e) => e.stopPropagation()}
                 onMouseDown={(e) => e.stopPropagation()}
                 onKeyDown={(e) => e.stopPropagation()}
+                onBlur={() => {
+                  if (!context.trim()) {
+                    setContextError("Context is required");
+                  }
+                }}
               />
             </div>
           )}
@@ -395,9 +417,12 @@ const FileUploader: React.FC<FileUploaderProps> = ({
 
       {selectedFile && (
         <Button 
-          className="w-full"
+          className={cn(
+            "w-full",
+            !context.trim() && "opacity-50 cursor-not-allowed"
+          )}
           onClick={handleSubmitFile}
-          disabled={!selectedFile}
+          disabled={!selectedFile || !context.trim()}
         >
           <Send className="mr-2 h-4 w-4" />
           Submit Diagnostics File
