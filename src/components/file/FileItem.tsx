@@ -1,9 +1,10 @@
 import React from 'react';
 import { FileItem } from '@/components/FileUploader';
-import { File, Eye, Trash2 } from 'lucide-react';
+import { File, Eye, Trash2, CheckCircle2, Loader2, AlertCircle, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { FileUploadStatus } from '@/types/file';
 
 interface FileCardProps {
   file: FileItem;
@@ -46,20 +47,17 @@ export const FileCard: React.FC<FileCardProps> = ({
     }
     return `${(bytes / 1000).toFixed(2)} KB`;
   };
-  
-  const formatDate = (timestamp: number): string => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-    
-    if (diffDays === 0) {
-      return 'Today';
-    } else if (diffDays === 1) {
-      return 'Yesterday';
-    } else if (diffDays < 7) {
-      return `${diffDays} days ago`;
-    } else {
-      return date.toLocaleDateString();
+
+  const renderStatusIcon = (status: FileUploadStatus) => {
+    switch (status) {
+      case FileUploadStatus.FILE_UPLOAD_STATUS_IN_PROGRESS:
+        return <Loader2 className="h-3.5 w-3.5 text-amber-500 animate-spin" />;
+      case FileUploadStatus.FILE_UPLOAD_STATUS_COMPLETE:
+        return <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />;
+      case FileUploadStatus.FILE_UPLOAD_STATUS_FAILED:
+        return <AlertCircle className="h-3.5 w-3.5 text-red-500" />;
+      default:
+        return <Clock className="h-3.5 w-3.5 text-muted-foreground" />;
     }
   };
 
@@ -89,6 +87,7 @@ export const FileCard: React.FC<FileCardProps> = ({
             <Badge variant="outline" className={cn("text-xs", getFileColor(file.type))}>
               {getFileTypeLabel(file.type)}
             </Badge>
+            {renderStatusIcon(file.status)}
           </div>
           
           <div className="flex items-center gap-2 text-xs text-zinc-400 mt-1">

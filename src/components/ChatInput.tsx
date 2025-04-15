@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Paperclip, Send, X, File as FileIcon } from "lucide-react";
+import { Paperclip, Send, X, File as FileIcon, CheckCircle2, Loader2, AlertCircle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import FileUploader, { FileItem } from "./FileUploader";
 import { Badge } from "@/components/ui/badge";
+import { FileUploadStatus } from "@/types/file";
 
 interface ChatInputProps {
   onSend?: (message: string, file?: FileItem | null) => void;
@@ -115,6 +116,19 @@ const ChatInput: React.FC<ChatInputProps> = ({
   // Use the active file or selected file for display
   const displayFile = selectedFile;
 
+  const renderStatusIcon = (status: FileUploadStatus) => {
+    switch (status) {
+      case FileUploadStatus.FILE_UPLOAD_STATUS_IN_PROGRESS:
+        return <Loader2 className="h-3.5 w-3.5 text-amber-500 animate-spin" />;
+      case FileUploadStatus.FILE_UPLOAD_STATUS_COMPLETE:
+        return <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />;
+      case FileUploadStatus.FILE_UPLOAD_STATUS_FAILED:
+        return <AlertCircle className="h-3.5 w-3.5 text-red-500" />;
+      default:
+        return <Clock className="h-3.5 w-3.5 text-muted-foreground" />;
+    }
+  };
+
   return (
     <div 
       className="relative w-full" 
@@ -134,6 +148,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
                 <Badge variant="outline" className="text-xs bg-zinc-500/20 text-zinc-400">
                   {displayFile.type.split('/')[1] || displayFile.type}
                 </Badge>
+                {renderStatusIcon(displayFile.status)}
               </div>
               <div className="flex items-center gap-2 text-xs text-zinc-400 mt-1">
                 <span>{formatFileSize(displayFile.size)}</span>
