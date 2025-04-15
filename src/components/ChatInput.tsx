@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from "react";
 import { Paperclip, Send, X, File as FileIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -28,7 +27,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
   disabled = false,
   onFileUploadClick,
   isDemo = false,
-  activeFile = null, // Default to null
+  activeFile = null,
   collapseFileList,
 }) => {
   const [message, setMessage] = useState<string>("");
@@ -83,6 +82,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
     onFileSubmit?.(file);
     setSelectedFile(file);
     setIsUploaderOpen(false);
+    collapseFileList?.();
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -95,16 +95,11 @@ const ChatInput: React.FC<ChatInputProps> = ({
     e.stopPropagation();
     
     if (!disabled) {
-      // Toggle the uploader state
-      const newUploaderState = !isUploaderOpen;
-      setIsUploaderOpen(newUploaderState);
-      
-      // If we're opening the uploader, call the onFileUploadClick callback to expand the file list
-      if (newUploaderState) {
+      const newState = !isUploaderOpen;
+      setIsUploaderOpen(newState);
+      if (newState) {
         onFileUploadClick?.();
-      } 
-      // If we're closing the uploader, collapse the file list
-      else {
+      } else {
         collapseFileList?.();
       }
     }
@@ -160,8 +155,9 @@ const ChatInput: React.FC<ChatInputProps> = ({
           onOpenChange={(open) => {
             if (!disabled) {
               setIsUploaderOpen(open);
-              // Always collapse file list when the popover is closed
-              if (!open) {
+              if (open) {
+                onFileUploadClick?.();
+              } else {
                 collapseFileList?.();
               }
             }
@@ -188,6 +184,18 @@ const ChatInput: React.FC<ChatInputProps> = ({
             onMouseDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}
             onKeyDown={(e) => e.stopPropagation()}
+            onEscapeKeyDown={() => {
+              setIsUploaderOpen(false);
+              collapseFileList?.();
+            }}
+            onPointerDownOutside={() => {
+              setIsUploaderOpen(false);
+              collapseFileList?.();
+            }}
+            onInteractOutside={() => {
+              setIsUploaderOpen(false);
+              collapseFileList?.();
+            }}
           >
             <FileUploader
               onFileSelect={(file) => {

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import ChatInput from "@/components/ChatInput";
@@ -45,6 +44,7 @@ const Index = () => {
   const [diagnosticResults, setDiagnosticResults] = useState<DiagnosticResult | null>(null);
   const [isFileInfoExpanded, setIsFileInfoExpanded] = useState<boolean>(false);
   const [isFileListExpanded, setIsFileListExpanded] = useState<boolean>(true);
+  const [isUploadPopupOpen, setIsUploadPopupOpen] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchFiles = async () => {
@@ -197,10 +197,10 @@ const Index = () => {
   };
 
   const handleFileUploadClick = () => {
-    setIsFileListExpanded(true);
+    setIsUploadPopupOpen(true);
+    setIsFileListExpanded(false);
   };
 
-  // New function to collapse the file list
   const collapseFileList = () => {
     setIsFileListExpanded(false);
   };
@@ -414,8 +414,13 @@ const Index = () => {
 
           <div className="border-t border-zinc-800 bg-zinc-900/50 px-4 pt-3">
             <Collapsible 
-              open={isFileListExpanded}
-              onOpenChange={setIsFileListExpanded}
+              open={isFileListExpanded && !isUploadPopupOpen}
+              onOpenChange={(open) => {
+                setIsFileListExpanded(open);
+                if (open) {
+                  setIsUploadPopupOpen(false);
+                }
+              }}
               className="mb-3"
             >
               <CollapsibleTrigger asChild>
