@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import ChatInput from "@/components/ChatInput";
 import { useToast } from "@/hooks/use-toast";
@@ -9,7 +9,7 @@ import { useTheme } from "@/components/ThemeProvider";
 import { deleteFile, getSubmittedFiles, submitFile, analyzeFile } from "@/services/fileService";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Input } from "@/components/ui/input";
-import { FileUploadStatus } from "@/components/FileUploader";
+import { FileUploadStatus } from "@/types/file";
 import { cn } from "@/lib/utils";
 import { FileGrid } from "@/components/FileGrid";
 

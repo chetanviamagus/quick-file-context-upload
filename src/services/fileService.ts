@@ -1,5 +1,5 @@
-
-import { FileItem, FileUploadStatus } from "@/components/FileUploader";
+import { FileItem } from "@/components/FileUploader";
+import { FileUploadStatus } from "@/types/file";
 
 // In-memory storage for submitted files
 let submittedFiles: FileItem[] = [];
