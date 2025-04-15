@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { FileItem } from '@/components/FileUploader';
 import { File, Eye, Trash2 } from 'lucide-react';
@@ -67,38 +66,40 @@ export const FileCard: React.FC<FileCardProps> = ({
   return (
     <div 
       className={cn(
-        "flex flex-col p-3 rounded-md cursor-pointer transition-all duration-200 hover:scale-[1.01] border overflow-hidden",
+        "flex items-center justify-between p-3 rounded-md cursor-pointer transition-all duration-200 hover:scale-[1.01] border",
         isActive
           ? 'bg-zinc-800/80 border-blue-500/50 shadow-md'
           : 'bg-zinc-800/40 border-zinc-800 hover:bg-zinc-800/60'
       )}
       onClick={() => onSelect(file)}
     >
-      <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center space-x-2 overflow-hidden">
-          <File className={cn(
-            "h-4 w-4 flex-shrink-0",
-            file.type === 'application/gzip' && "text-amber-400",
-            file.type === 'application/json' && "text-blue-400",
-            file.type === 'text/plain' && "text-gray-400",
-            file.type === 'application/yaml' && "text-green-400",
-            file.type === 'text/csv' && "text-purple-400"
-          )} />
-          <span className="font-medium text-sm truncate">{file.name}</span>
+      <div className="flex items-center gap-3 min-w-0">
+        <File className={cn(
+          "h-4 w-4 flex-shrink-0",
+          file.type === 'application/gzip' && "text-amber-400",
+          file.type === 'application/json' && "text-blue-400",
+          file.type === 'text/plain' && "text-gray-400",
+          file.type === 'application/yaml' && "text-green-400",
+          file.type === 'text/csv' && "text-purple-400"
+        )} />
+        
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-sm truncate">{file.name}</span>
+            <Badge variant="outline" className={cn("text-xs", getFileColor(file.type))}>
+              {getFileTypeLabel(file.type)}
+            </Badge>
+          </div>
+          
+          <div className="flex items-center gap-2 text-xs text-zinc-400 mt-1">
+            <span>{formatFileSize(file.size)}</span>
+            <span className="text-zinc-600">•</span>
+            <span className="truncate">{file.context}</span>
+          </div>
         </div>
-        <Badge variant="outline" className={cn("text-xs", getFileColor(file.type))}>
-          {getFileTypeLabel(file.type)}
-        </Badge>
       </div>
       
-      <p className="text-xs text-zinc-400 mb-2 line-clamp-2">{file.context}</p>
-      
-      <div className="mt-auto flex items-center justify-between text-xs text-zinc-500">
-        <span>{formatFileSize(file.size)}</span>
-        <span>{formatDate(file.lastModified)}</span>
-      </div>
-      
-      <div className="flex justify-end space-x-1 mt-2 opacity-80 hover:opacity-100">
+      <div className="flex items-center gap-1 ml-2">
         <Button 
           variant="ghost" 
           size="icon"

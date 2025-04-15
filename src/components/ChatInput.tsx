@@ -6,6 +6,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import FileUploader, { FileItem } from "./FileUploader";
+import { Badge } from "@/components/ui/badge";
 
 interface ChatInputProps {
   onSend?: (message: string, file?: FileItem | null) => void;
@@ -122,20 +123,33 @@ const ChatInput: React.FC<ChatInputProps> = ({
     >
       {displayFile && (
         <div className={cn(
-          "flex items-center gap-2 w-full border bg-zinc-900/90 rounded-t-md px-3 py-2",
+          "flex items-center justify-between w-full border bg-zinc-900/90 rounded-t-md px-3 py-2",
           "border-zinc-800 border-b-0"
         )}>
-          <div className="flex items-center gap-2 flex-1 overflow-hidden">
+          <div className="flex items-center gap-3 min-w-0">
             <FileIcon className="h-4 w-4 text-primary flex-shrink-0" />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{displayFile.name}</p>
-              <p className="text-xs text-zinc-400">{formatFileSize(displayFile.size)}</p>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium truncate">{displayFile.name}</span>
+                <Badge variant="outline" className="text-xs bg-zinc-500/20 text-zinc-400">
+                  {displayFile.type.split('/')[1] || displayFile.type}
+                </Badge>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-zinc-400 mt-1">
+                <span>{formatFileSize(displayFile.size)}</span>
+                {displayFile.context && (
+                  <>
+                    <span className="text-zinc-600">•</span>
+                    <span className="truncate">{displayFile.context}</span>
+                  </>
+                )}
+              </div>
             </div>
           </div>
           <Button
             variant="ghost"
             size="icon"
-            className="h-7 w-7 rounded-full shrink-0"
+            className="h-7 w-7 rounded-full shrink-0 ml-2"
             onClick={handleRemoveSelectedFile}
             disabled={disabled}
           >
