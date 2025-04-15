@@ -224,7 +224,6 @@ const ChatInput: React.FC<ChatInputProps> = ({
           className="flex-1 border-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-0 py-0.5 bg-transparent"
           disabled={disabled}
         />
-
         <Button
           variant="ghost"
           size="icon"
