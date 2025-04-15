@@ -28,5 +28,12 @@ export default defineConfig(({ mode }) => ({
         manualChunks: undefined,
       },
     },
+    sourcemap: true,
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: false,
+      },
+    },
   },
 }));
